@@ -19,7 +19,7 @@ def list_agent_logs(limit: int = 100):
                 "agent": log.agent_name,
                 "action": log.action,
                 "payload": log.details,
-                "created_at": log.created_at,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
             }
             for log in logs
         ]
