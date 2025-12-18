@@ -1,7 +1,6 @@
 from agents.data_engineer import DataEngineerAgent
 from db import SessionLocal
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
