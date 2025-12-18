@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Column, DateTime, Float, Integer, String
+from sqlalchemy import JSON, Column, DateTime, Float, Integer, String, null
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -48,4 +48,14 @@ class Report(Base):
     summary = Column(String)
     score = Column(Float)
     content = Column(JSON)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class AgentLog(Base):
+    __tablename__ = "agent_logs"
+
+    id = Column(Integer, primary_key=True)
+    agent_name = Column(String, nullable=False)
+    action = Column(String)
+    details = Column(JSON)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
