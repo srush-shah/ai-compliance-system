@@ -1,0 +1,26 @@
+# Backend - Updated for Python 3.13 compatibility
+fastapi>=0.115.0  # Python 3.13 compatible, works with ChromaDB and Pydantic v2
+uvicorn[standard]>=0.27.0  # Python 3.13 compatible
+pydantic>=2.10.0  # Python 3.13 compatible (v2.10+ works well with Python 3.13)
+python-dotenv>=1.0.0
+
+# Database
+sqlalchemy>=2.0.30  # Python 3.13 compatible
+psycopg[binary]>=3.1.0  # Modern replacement for psycopg2, fully supports Python 3.13
+# Note: psycopg2-binary may work on Python 3.13 but psycopg is recommended
+alembic>=1.13.0  # Python 3.13 compatible
+
+# Google ADK / Multi-Agent
+# google-ads>=28.0.0  # Updated version (23.0.0 doesn't exist, latest is 28.x)
+# If using actual Google ADK for Python (multi-agent workflow)
+# install the package specific to the agent SDK you choose
+# For now, you can pip install 'google-ads' to mock the SDK
+
+# Vector embeddings / optional
+chromadb>=0.5.0  # Python 3.13 compatible
+# Note: ChromaDB 1.0.x may require fastapi==0.115.9 exactly, but newer versions are more flexible
+pgvector>=0.3.0  # optional Postgres vector extension (Python 3.13 compatible)
+
+# Utilities
+requests>=2.32.2  # Updated from yanked 2.32.1 (CVE-2024-35195), Python 3.13 compatible
+python-multipart>=0.0.9  # Python 3.13 compatible
