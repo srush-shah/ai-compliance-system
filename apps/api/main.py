@@ -1,9 +1,12 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from routers import upload
 
 load_dotenv()
 
 app = FastAPI(title="AI Compliance Platform")
+
+app.include_router(upload.router)
 
 
 @app.get("/health")
