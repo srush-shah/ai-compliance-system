@@ -1,11 +1,66 @@
 """
-ADK Report Writer Agent (stub).
+ADK Report Writer Agent
 
-This is a placeholder.
-No logic is implemented yet.
+Responsible for generating final structured report content
+based on violations and existing report metadata.
 """
+
+from typing import Any, Dict
+
+from adk.tools.tools_registry import get_adk_tools
 
 
 class ReportWriterADKAgent:
     def __init__(self):
-        pass
+        self.name = "Report Writer"
+        self.tools = get_adk_tools()
+
+    def write_report(self, report_id: int, processed_id: int) -> Dict[str, Any]:
+        """
+        Generate and persist final report content.
+        """
+
+        # 1. Fetch existing report
+        report = self.tools["get_report_by_id"](report_id)
+        if "error" in report:
+            return {"error": "report not found"}
+
+        # 2. Fetch violations for this processed data
+        violations = self.tools["get_violations_by_processed_id"](processed_id)
+
+        # 3. Build summary
+        violation_count = len(violations)
+        summary = (
+            f"Compliance review completed. " f"{violation_count} violation(s) detected."
+        )
+
+        # 4. Build structured content
+        content = {
+            "report_id": report_id,
+            "processed_id": processed_id,
+            "violation_count": violation_count,
+            "violations": violations,
+            "generated_by": self.name,
+        }
+
+        # 5. Persist report update
+        self.tools["update_report"](
+            report_id=report_id, summary=summary, content=content
+        )
+
+        # 6. Log agent action
+        self.tools["log_agent_action"](
+            agent_name=self.name,
+            action="write_report",
+            details={
+                "report_id": report_id,
+                "processed_id": processed_id,
+                "violation_count": violation_count,
+            },
+        )
+
+        return {
+            "status": "success",
+            "report_id": report_id,
+            "violation_count": violation_count,
+        }

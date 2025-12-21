@@ -1,7 +1,7 @@
 from adk.tools.db_tools import (
     create_violation,
-    fetch_policy_rules,
-    fetch_processed_data,
+    get_policy_rules,
+    get_processed_data_by_id,
     log_agent_action,
 )
 from fastapi import APIRouter
@@ -11,12 +11,12 @@ router = APIRouter(prefix="/test_tools", tags=["test_tools"])
 
 @router.get("/processed/{pid}")
 def test_processed(pid: int):
-    return fetch_processed_data(pid)
+    return get_processed_data_by_id(pid)
 
 
 @router.get("/rules")
 def test_rules():
-    return fetch_policy_rules()
+    return get_policy_rules()
 
 
 @router.post("/violation")
