@@ -2,11 +2,32 @@ from datetime import datetime, timezone
 from typing import Dict, List
 
 from db import SessionLocal
-from models import AgentLog, PolicyRule, ProcessedData, Violation
+from models import AgentLog, PolicyRule, ProcessedData, RawData, Report, Violation
+from sqlalchemy import Integer, cast, text
 from sqlalchemy.orm import Session
 
+# =========Read Ops==================
 
-def fetch_processed_data(processed_id: int) -> Dict:
+
+def get_raw_data_by_id(raw_id: int) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        r = db.query(RawData).filter(RawData.id == raw_id).first()
+
+        if r is None:
+            return {"error": "not_found"}
+
+        return {
+            "id": r.id,
+            "content": r.structured,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+    finally:
+        db.close()
+
+
+def get_processed_data_by_id(processed_id: int) -> Dict:
     db: Session = SessionLocal()
 
     try:
@@ -24,7 +45,7 @@ def fetch_processed_data(processed_id: int) -> Dict:
         db.close()
 
 
-def fetch_policy_rules() -> List[Dict]:
+def get_policy_rules() -> List[Dict]:
     db: Session = SessionLocal()
 
     try:
@@ -46,6 +67,70 @@ def fetch_policy_rules() -> List[Dict]:
         db.close()
 
 
+def get_violations_by_processed_id(processed_id: int) -> List[Dict]:
+    db: Session = SessionLocal()
+
+    try:
+        violations = (
+            db.query(Violation)
+            .filter(
+                cast(text("violations.details --> 'processed_id'"), Integer)
+                == processed_id
+            )
+            .all()
+        )
+
+        return [
+            {
+                "id": v.id,
+                "rule": v.rule,
+                "severity": v.severity,
+                "details": v.details,
+                "created_at": v.created_at.isoformat() if v.created_at else None,
+            }
+            for v in violations
+        ]
+    finally:
+        db.close()
+
+
+def get_report_by_id(report_id: int) -> Dict:
+    db: Session = SessionLocal()
+    try:
+        r = db.query(Report).filter(Report.id == report_id).first()
+        if not r:
+            return {"error": "not found"}
+
+        return {
+            "id": r.id,
+            "summary": r.summary,
+            "score": r.score,
+            "content": r.content,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+
+    finally:
+        db.close()
+
+
+# ============Write Ops==============
+
+
+def create_processed_data(raw_id: int, structured: Dict) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        p = ProcessedData(raw_id=raw_id, structured=structured)
+
+        db.add(p)
+        db.commit()
+        db.refresh(p)
+        return {"id": p.id, "raw_id": raw_id}
+
+    finally:
+        db.close()
+
+
 def create_violation(
     processed_id: int, rule: str, severity: str, details: Dict
 ) -> Dict:
@@ -63,6 +148,28 @@ def create_violation(
         db.commit()
         db.refresh(v)
         return {"id": v.id, "processed_id": processed_id}
+    finally:
+        db.close()
+
+
+def create_report(processed_id: int, score: int, summary: str, content: Dict) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        report = Report(
+            processed_id=processed_id,
+            score=score,
+            summary=summary,
+            content=content,
+            created_at=datetime.now(timezone),
+        )
+
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+
+        return {"id": report.id, "processed_id": processed_id, "score": score}
+
     finally:
         db.close()
 

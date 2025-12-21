@@ -1,6 +1,11 @@
 """
-ADK Compliance Checker Agent (tool-aware, non-executing).
+ADK Compliance Checker Agent
+
+Fetches processed data, checks against policy rules, creates violations, and logs actions via ADK tools.
 """
+
+from datetime import datetime, timezone
+from typing import Dict, List
 
 from adk.tools.tools_registry import get_adk_tools
 
@@ -16,3 +21,54 @@ class ComplianceCheckerADKAgent:
         """
 
         return {"agent": self.name, "available_tools": list(self.tools.keys())}
+
+    def check_compliance(self, processed_id: int) -> Dict:
+        """
+        Run compliance check on processed data.
+        Steps:
+        1. Fetch processed data
+        2. Fetch policy rules
+        3. Apply rules to detect violations
+        4. Create violation entries
+        5. Log actions
+        """
+        # 1. Fetch processed data
+        processed = self.tools["get_processed_data_by_id"](processed_id)
+
+        if "error" in processed:
+            return {"error": "processed_data not found", "processed_id": processed_id}
+
+        # 2. Fetch policy rules
+        rules = self.tools["get_policy_rules"]()
+
+        if not rules or "error" in rules:
+            return {"error": "policy_rules not found"}
+
+        violations_created: List[Dict] = []
+
+        # 3. Apply rules (simple substring matching for now)
+        content = processed["structured"].get("full_content", "")
+
+        for rule in rules:
+            if rule["name"].lower() in content.lower():
+
+                # 4. Create violation
+                violation = self.tools["create_violation"](
+                    processed_id=processed_id,
+                    rule=rule["name"],
+                    severity=rule["severity"],
+                    details={"matched_text": rule["name"]},
+                )
+                violations_created.append(violation)
+
+        # 5. Log Action
+        self.tools["log_agent_action"](
+            agent_name=self.name,
+            action="checked_compliance",
+            details={
+                "processed_id": processed_id,
+                "violations_count": len(violations_created),
+            },
+        )
+
+        return {"processed_id": processed_id, "violations": violations_created}
