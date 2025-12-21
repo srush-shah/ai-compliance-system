@@ -58,6 +58,7 @@ class ComplianceCheckerADKAgent:
                     rule=rule["name"],
                     severity=rule["severity"],
                     details={"matched_text": rule["name"]},
+                    created_at=datetime.now(timezone.utc),
                 )
                 violations_created.append(violation)
 
