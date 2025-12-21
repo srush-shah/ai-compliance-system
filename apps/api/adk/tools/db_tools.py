@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from this import d
 from typing import Dict, List
 
 from db import SessionLocal
