@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from routers import (
+    adk_tools_test,
     compliance,
     dashboard_agents,
     dashboard_reports,
@@ -24,6 +25,8 @@ app.include_router(report.router)
 app.include_router(dashboard_reports.router)
 app.include_router(dashboard_violations.router)
 app.include_router(dashboard_agents.router)
+
+app.include_router(adk_tools_test.router)
 
 
 @app.get("/health")
