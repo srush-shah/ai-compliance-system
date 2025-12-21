@@ -7,7 +7,8 @@ This file intentionally contains:
 - No FastAPI imports
 - No execution logic
 
-It only defines constants and helper functions that all ADK agents will use later.
+It only defines constants and helper functions that
+all ADK agents will use later.
 """
 
 # Model configuration
