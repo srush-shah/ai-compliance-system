@@ -174,6 +174,28 @@ def create_report(processed_id: int, score: int, summary: str, content: Dict) ->
         db.close()
 
 
+def update_report(report_id: int, summary: str, content: Dict, score: int) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        r = db.query(Report).filter(Report.id == report_id).first()
+
+        if r is None:
+            return {"error": "not_found"}
+
+        r.summary = (summary,)
+        r.content = (content,)
+        r.score = (score,)
+        r.created_at = datetime.now(timezone.utc)
+
+        db.commit()
+        db.refresh(r)
+
+        return {"id": r.id, "summary": r.summary, "score": r.score}
+    finally:
+        db.close()
+
+
 def log_agent_action(agent_name: str, action: str, details: Dict) -> Dict:
 
     db: Session = SessionLocal()

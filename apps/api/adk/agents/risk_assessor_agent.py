@@ -5,7 +5,7 @@ Calculates risk score based on violaitons
 and generates a report entry.
 """
 
-from typing import Dict, List
+from typing import Dict
 
 from adk.tools.tools_registry import get_adk_tools
 
