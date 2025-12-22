@@ -35,11 +35,24 @@ class DataEngineerADKAgent:
             return {"error": "raw_data not found", "raw_id": raw_id}
 
         # 2. Basic structuring/cleaning
+        # Handle content which can be a dict or string
+        content = raw["content"]
+        if isinstance(content, dict):
+            # Extract text from dict (e.g., {"raw_text": "..."})
+            text_content = content.get("raw_text", str(content))
+        else:
+            text_content = str(content)
+
         # For now, we just wrap the data in a dict and add metadata
         structured_data = {
-            "length": len(raw["content"]),
-            "content_preview": raw["content"][:200],
-            "full_content": raw["content"],
+            "length": len(text_content),
+            "content_preview": (
+                text_content[:200]
+                if isinstance(text_content, str)
+                else str(text_content)[:200]
+            ),
+            "full_content": text_content,
+            "raw_content": content,  # Keep original for reference
             "processed_at": datetime.now(timezone.utc).isoformat(),
         }
 

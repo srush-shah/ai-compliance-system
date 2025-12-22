@@ -1,14 +1,15 @@
-from agents.compliance_checker import ComplianceCheckerAgent
-from fastapi import APIRouter
+from adk.workflows.compliance_workflow import ComplianceReviewWorkflow
+from fastapi import APIRouter, HTTPException
 
-router = APIRouter(prefix="/check_compliance", tags=["compliance"])
+router = APIRouter(prefix="/compliance", tags=["compliance"])
+
+workflow = ComplianceReviewWorkflow()
 
 
-@router.post("")
-def run_compliance(processed_id: int):
-    agent = ComplianceCheckerAgent()
-    violations = agent.check_compliance(processed_id)
-    if violations is None:
-        return {"status": "failed", "processed_id": processed_id}
-
-    return {"status": "checked", "violations": violations}
+@router.post("/run/{raw_id}")
+def run_compliance(raw_id: int):
+    try:
+        result = workflow.run(raw_id=raw_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

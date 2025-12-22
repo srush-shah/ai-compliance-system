@@ -20,16 +20,40 @@ class ComplianceReviewWorkflow:
     def run(self, raw_id: int) -> dict:
         # 1. Data engineering
         data_result = self.data_engineer.run(raw_id=raw_id)
+        if "error" in data_result:
+            return {
+                "status": "failed",
+                "error": data_result.get("error"),
+                "step": "data_engineering",
+            }
         processed_id = data_result["processed_id"]
 
         # 2. Compliance checking
         compliance_result = self.compliance_checker.run(processed_id=processed_id)
+        if "error" in compliance_result:
+            return {
+                "status": "failed",
+                "error": compliance_result.get("error"),
+                "step": "compliance_checking",
+            }
 
         # 3. Risk assesssment
         risk_result = self.risk_assessor.run(processed_id=processed_id)
+        if "error" in risk_result:
+            return {
+                "status": "failed",
+                "error": risk_result.get("error"),
+                "step": "risk_assessment",
+            }
         report_id = risk_result["report_id"]
 
         # 4. Report writing
-        self.report_writer.run(report_id=report_id)
+        report_result = self.report_writer.run(report_id=report_id)
+        if "error" in report_result:
+            return {
+                "status": "failed",
+                "error": report_result.get("error"),
+                "step": "report_writing",
+            }
 
         return {"status": "completed", "report_id": report_id}

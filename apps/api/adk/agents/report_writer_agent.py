@@ -44,8 +44,14 @@ class ReportWriterADKAgent:
         }
 
         # 5. Persist report update
+        # Get existing score from report, calculate if not present
+        score = (
+            report.get("score")
+            if report.get("score") is not None
+            else min(violation_count * 10, 100)
+        )
         self.tools["update_report"](
-            report_id=report_id, summary=summary, content=content
+            report_id=report_id, summary=summary, content=content, score=score
         )
 
         # 6. Log agent action

@@ -4,7 +4,6 @@ ADK Compliance Checker Agent
 Fetches processed data, checks against policy rules, creates violations, and logs actions via ADK tools.
 """
 
-from datetime import datetime, timezone
 from typing import Dict, List
 
 from adk.tools.tools_registry import get_adk_tools
@@ -47,10 +46,16 @@ class ComplianceCheckerADKAgent:
         violations_created: List[Dict] = []
 
         # 3. Apply rules (simple substring matching for now)
-        content = processed["structured"].get("full_content", "")
+        # Extract text content from structured data
+        full_content = processed["structured"].get("full_content", "")
+        # Handle both string and dict content
+        if isinstance(full_content, dict):
+            content_text = str(full_content.get("raw_text", full_content))
+        else:
+            content_text = str(full_content)
 
         for rule in rules:
-            if rule["name"].lower() in content.lower():
+            if rule["name"].lower() in content_text.lower():
 
                 # 4. Create violation
                 violation = self.tools["create_violation"](
@@ -58,7 +63,6 @@ class ComplianceCheckerADKAgent:
                     rule=rule["name"],
                     severity=rule["severity"],
                     details={"matched_text": rule["name"]},
-                    created_at=datetime.now(timezone.utc),
                 )
                 violations_created.append(violation)
 

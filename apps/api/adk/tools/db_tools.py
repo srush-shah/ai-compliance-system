@@ -20,7 +20,7 @@ def get_raw_data_by_id(raw_id: int) -> Dict:
 
         return {
             "id": r.id,
-            "content": r.structured,
+            "content": r.content,
             "created_at": r.created_at.isoformat() if r.created_at else None,
         }
     finally:
@@ -74,7 +74,7 @@ def get_violations_by_processed_id(processed_id: int) -> List[Dict]:
         violations = (
             db.query(Violation)
             .filter(
-                cast(text("violations.details --> 'processed_id'"), Integer)
+                cast(text("violations.details ->> 'processed_id'"), Integer)
                 == processed_id
             )
             .all()
@@ -120,7 +120,7 @@ def create_processed_data(raw_id: int, structured: Dict) -> Dict:
     db: Session = SessionLocal()
 
     try:
-        p = ProcessedData(raw_id=raw_id, structured=structured)
+        p = ProcessedData(structured=structured)
 
         db.add(p)
         db.commit()
@@ -157,11 +157,10 @@ def create_report(processed_id: int, score: int, summary: str, content: Dict) ->
 
     try:
         report = Report(
-            processed_id=processed_id,
             score=score,
             summary=summary,
             content=content,
-            created_at=datetime.now(timezone),
+            created_at=datetime.now(timezone.utc),
         )
 
         db.add(report)
@@ -183,9 +182,9 @@ def update_report(report_id: int, summary: str, content: Dict, score: int) -> Di
         if r is None:
             return {"error": "not_found"}
 
-        r.summary = (summary,)
-        r.content = (content,)
-        r.score = (score,)
+        r.summary = summary
+        r.content = content
+        r.score = score
         r.created_at = datetime.now(timezone.utc)
 
         db.commit()
