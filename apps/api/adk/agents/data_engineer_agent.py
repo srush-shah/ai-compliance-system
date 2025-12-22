@@ -56,3 +56,6 @@ class DataEngineerADKAgent:
         )
 
         return {"processed_id": processed_id, "structured": structured_data}
+
+    def run(self, raw_id: int) -> Dict:
+        return self.process_raw_data(raw_id=raw_id)

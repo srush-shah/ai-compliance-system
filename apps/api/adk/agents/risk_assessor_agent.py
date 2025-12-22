@@ -55,3 +55,6 @@ class RiskAssessorADKAgent:
         )
 
         return {"processed_id": processed_id, "report_id": report["id"], "score": score}
+
+    def run(self, processed_id: int) -> Dict:
+        return self.assess_risk(processed_id=processed_id)

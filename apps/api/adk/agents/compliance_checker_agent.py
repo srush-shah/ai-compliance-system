@@ -73,3 +73,6 @@ class ComplianceCheckerADKAgent:
         )
 
         return {"processed_id": processed_id, "violations": violations_created}
+
+    def run(self, processed_id: int) -> Dict:
+        return self.check_compliance(processed_id=processed_id)
