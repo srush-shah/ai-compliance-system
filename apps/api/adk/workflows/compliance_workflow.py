@@ -18,14 +18,18 @@ class ComplianceReviewWorkflow:
         self.report_writer = ReportWriterADKAgent()
 
     def run(self, raw_id: int) -> dict:
-        """
-        Orchestrates the full compliance workflow.
+        # 1. Data engineering
+        data_result = self.data_engineer.run(raw_id=raw_id)
+        processed_id = data_result["processed_id"]
 
-        Input:
-            raw_id: ID of raw uploaded data
+        # 2. Compliance checking
+        compliance_result = self.compliance_checker.run(processed_id=processed_id)
 
-        Output:
-            dict with final report_id and status
-        """
+        # 3. Risk assesssment
+        risk_result = self.risk_assessor.run(processed_id=processed_id)
+        report_id = risk_result["report_id"]
 
-        raise NotImplementedError("Workflow logic not implemented yet.")
+        # 4. Report writing
+        self.report_writer.run(report_id=report_id)
+
+        return {"status": "completed", "report_id": report_id}
