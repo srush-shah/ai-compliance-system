@@ -8,6 +8,7 @@ from adk.agents.compliance_checker_agent import ComplianceCheckerADKAgent
 from adk.agents.data_engineer_agent import DataEngineerADKAgent
 from adk.agents.report_writer_agent import ReportWriterADKAgent
 from adk.agents.risk_assessor_agent import RiskAssessorADKAgent
+from adk.tools.tools_registry import get_adk_tools
 from adk.workflows.types import WorkflowResult, WorkflowStepResult
 
 
@@ -17,8 +18,12 @@ class ComplianceReviewWorkflow:
         self.compliance_checker = ComplianceCheckerADKAgent()
         self.risk_assessor = RiskAssessorADKAgent()
         self.report_writer = ReportWriterADKAgent()
+        self.tools = get_adk_tools()
 
     def run(self, raw_id: int) -> dict:
+        adk_run = self.tools["create_adk_run"](raw_id=raw_id, status="started")
+        adk_run_id = adk_run["id"]
+
         steps = {}
 
         # 1. Data engineering
@@ -27,6 +32,10 @@ class ComplianceReviewWorkflow:
         if "error" in data_result:
             steps["data_engineering"] = WorkflowStepResult(
                 step="data_engineering", status="failed", error=data_result["error"]
+            )
+
+            self.tools["update_adk_run"](
+                run_id=adk_run_id, status="failed", error="data engineering failed"
             )
             return WorkflowResult(
                 status="failed", raw_id=raw_id, steps=steps
@@ -45,6 +54,10 @@ class ComplianceReviewWorkflow:
                 status="failed",
                 error=compliance_result["error"],
             )
+
+            self.tools["update_adk_run"](
+                run_id=adk_run_id, status="failed", error="compliance check failed"
+            )
             return WorkflowResult(
                 status="failed", raw_id=raw_id, processed_id=processed_id, steps=steps
             ).model_dump()
@@ -59,6 +72,11 @@ class ComplianceReviewWorkflow:
             steps["risk_assessment"] = WorkflowStepResult(
                 step="risk_assessment", status="failed", data=risk_result["error"]
             )
+
+            self.tools["update_adk_run"](
+                run_id=adk_run_id, status="failed", error="risk assessment failed"
+            )
+
             return WorkflowResult(
                 status="failed", raw_id=raw_id, processed_id=processed_id, steps=steps
             ).model_dump()
@@ -74,6 +92,11 @@ class ComplianceReviewWorkflow:
             steps["report_writing"] = WorkflowStepResult(
                 step="report_writing", status="failed", error=report_result["error"]
             )
+
+            self.tools["update_adk_run"](
+                run_id=adk_run_id, status="failed", error="report writing failed"
+            )
+
             return WorkflowResult(
                 status="failed",
                 raw_id=raw_id,
@@ -84,6 +107,13 @@ class ComplianceReviewWorkflow:
 
         steps["report_writing"] = WorkflowStepResult(
             step="report_writing", status="success", data=report_result
+        )
+
+        self.tools["update_adk_run"](
+            run_id=adk_run_id,
+            processed_id=processed_id,
+            report_id=report_id,
+            status="completed",
         )
         return WorkflowResult(
             status="completed",

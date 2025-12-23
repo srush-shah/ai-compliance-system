@@ -19,6 +19,7 @@ from adk.tools.db_tools import (
     get_report_by_id,
     get_violations_by_processed_id,
     log_agent_action,
+    update_adk_run,
     update_report,
 )
 
@@ -40,4 +41,5 @@ def get_adk_tools() -> Dict[str, Callable]:
         "update_report": update_report,
         "log_agent_action": log_agent_action,
         "create_adk_run": create_adk_run,
+        "update_adk_run": update_adk_run,
     }

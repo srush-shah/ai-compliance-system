@@ -236,3 +236,38 @@ def create_adk_run(raw_id: int, status: str) -> Dict:
         return {"id": run.id}
     finally:
         db.close()
+
+
+def update_adk_run(
+    run_id: int,
+    status: str,
+    processed_id: int | None = None,
+    report_id: int | None = None,
+    error: str | None = None,
+) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        adk = db.query(ADKRun).filter(ADKRun.id == run_id).first()
+
+        if adk is None:
+            return {"error": "not_found"}
+
+        adk.processed_id = processed_id
+        adk.report_id = report_id
+        adk.error = error
+        adk.status = status
+        adk.updated_at = datetime.now(timezone.utc)
+
+        db.commit()
+        db.refresh(adk)
+
+        return {
+            "id": adk.id,
+            "status": adk.status,
+            "processed_id": adk.processed_id,
+            "report_id": adk.report_id,
+            "error": adk.error,
+        }
+    finally:
+        db.close()

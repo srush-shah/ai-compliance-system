@@ -74,3 +74,4 @@ class ADKRun(Base):
     error = Column(String, nullable=True)
 
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=True)
