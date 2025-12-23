@@ -8,6 +8,7 @@ from adk.agents.compliance_checker_agent import ComplianceCheckerADKAgent
 from adk.agents.data_engineer_agent import DataEngineerADKAgent
 from adk.agents.report_writer_agent import ReportWriterADKAgent
 from adk.agents.risk_assessor_agent import RiskAssessorADKAgent
+from adk.workflows.types import WorkflowResult, WorkflowStepResult
 
 
 class ComplianceReviewWorkflow:
@@ -18,42 +19,76 @@ class ComplianceReviewWorkflow:
         self.report_writer = ReportWriterADKAgent()
 
     def run(self, raw_id: int) -> dict:
+        steps = {}
+
         # 1. Data engineering
         data_result = self.data_engineer.run(raw_id=raw_id)
+
         if "error" in data_result:
-            return {
-                "status": "failed",
-                "error": data_result.get("error"),
-                "step": "data_engineering",
-            }
+            steps["data_engineering"] = WorkflowStepResult(
+                step="data_engineering", status="failed", error=data_result["error"]
+            )
+            return WorkflowResult(
+                status="failed", raw_id=raw_id, steps=steps
+            ).model_dump()
+
         processed_id = data_result["processed_id"]
+        steps["data_engineering"] = WorkflowStepResult(
+            step="data_engineering", status="success", data=data_result
+        )
 
         # 2. Compliance checking
         compliance_result = self.compliance_checker.run(processed_id=processed_id)
         if "error" in compliance_result:
-            return {
-                "status": "failed",
-                "error": compliance_result.get("error"),
-                "step": "compliance_checking",
-            }
+            steps["compliance_checking"] = WorkflowStepResult(
+                step="compliance_checking",
+                status="failed",
+                error=compliance_result["error"],
+            )
+            return WorkflowResult(
+                status="failed", raw_id=raw_id, processed_id=processed_id, steps=steps
+            ).model_dump()
+
+        steps["compliance_checking"] = WorkflowStepResult(
+            step="compliance_checking", status="success", data=compliance_result
+        )
 
         # 3. Risk assesssment
         risk_result = self.risk_assessor.run(processed_id=processed_id)
         if "error" in risk_result:
-            return {
-                "status": "failed",
-                "error": risk_result.get("error"),
-                "step": "risk_assessment",
-            }
+            steps["risk_assessment"] = WorkflowStepResult(
+                step="risk_assessment", status="failed", data=risk_result["error"]
+            )
+            return WorkflowResult(
+                status="failed", raw_id=raw_id, processed_id=processed_id, steps=steps
+            ).model_dump()
+
         report_id = risk_result["report_id"]
+        steps["risk_assessment"] = WorkflowStepResult(
+            step="risk_assessment", status="success", data=risk_result
+        )
 
         # 4. Report writing
         report_result = self.report_writer.run(report_id=report_id)
         if "error" in report_result:
-            return {
-                "status": "failed",
-                "error": report_result.get("error"),
-                "step": "report_writing",
-            }
+            steps["report_writing"] = WorkflowStepResult(
+                step="report_writing", status="failed", error=report_result["error"]
+            )
+            return WorkflowResult(
+                status="failed",
+                raw_id=raw_id,
+                processed_id=processed_id,
+                report_id=report_id,
+                steps=steps,
+            ).model_dump()
 
-        return {"status": "completed", "report_id": report_id}
+        steps["report_writing"] = WorkflowStepResult(
+            step="report_writing", status="success", data=report_result
+        )
+        return WorkflowResult(
+            status="completed",
+            raw_id=raw_id,
+            processed_id=processed_id,
+            report_id=report_id,
+            steps=steps,
+        ).model_dump()
