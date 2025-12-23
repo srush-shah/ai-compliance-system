@@ -9,6 +9,7 @@ from typing import Callable, Dict
 
 # Import existing db tools (already tested)
 from adk.tools.db_tools import (
+    create_adk_run,
     create_processed_data,
     create_report,
     create_violation,
@@ -38,4 +39,5 @@ def get_adk_tools() -> Dict[str, Callable]:
         "create_report": create_report,
         "update_report": update_report,
         "log_agent_action": log_agent_action,
+        "create_adk_run": create_adk_run,
     }

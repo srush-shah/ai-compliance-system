@@ -59,3 +59,18 @@ class AgentLog(Base):
     action = Column(String)
     details = Column(JSON)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ADKRun(Base):
+    __tablename__ = "adk_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    raw_id = Column(Integer, nullable=False)
+    processed_id = Column(Integer, nullable=True)
+    report_id = Column(Integer, nullable=True)
+
+    status = Column(String, nullable=False)  # started | completed | failed
+    error = Column(String, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))

@@ -2,7 +2,15 @@ from datetime import datetime, timezone
 from typing import Dict, List
 
 from db import SessionLocal
-from models import AgentLog, PolicyRule, ProcessedData, RawData, Report, Violation
+from models import (
+    ADKRun,
+    AgentLog,
+    PolicyRule,
+    ProcessedData,
+    RawData,
+    Report,
+    Violation,
+)
 from sqlalchemy import Integer, cast, text
 from sqlalchemy.orm import Session
 
@@ -210,5 +218,21 @@ def log_agent_action(agent_name: str, action: str, details: Dict) -> Dict:
         db.commit()
         db.refresh(log)
         return {"id": log.id}
+    finally:
+        db.close()
+
+
+def create_adk_run(raw_id: int, status: str) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        run = ADKRun(
+            raw_id=raw_id, status=status, created_at=datetime.now(timezone.utc)
+        )
+        db.add(run)
+        db.commit()
+        db.refresh(run)
+
+        return {"id": run.id}
     finally:
         db.close()
