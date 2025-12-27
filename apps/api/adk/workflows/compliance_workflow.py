@@ -21,6 +21,10 @@ class ComplianceReviewWorkflow:
         self.tools = get_adk_tools()
 
     def run(self, raw_id: int) -> dict:
+        active = self.tools["get_active_adk_run_by_raw_id"](raw_id)
+        if active.get("active"):
+            return {"status": "already_running", "run_id": active["run_id"]}
+
         adk_run = self.tools["create_adk_run"](raw_id=raw_id, status="started")
         adk_run_id = adk_run["id"]
 
@@ -70,7 +74,7 @@ class ComplianceReviewWorkflow:
         risk_result = self.risk_assessor.run(processed_id=processed_id)
         if "error" in risk_result:
             steps["risk_assessment"] = WorkflowStepResult(
-                step="risk_assessment", status="failed", data=risk_result["error"]
+                step="risk_assessment", status="failed", error=risk_result["error"]
             )
 
             self.tools["update_adk_run"](

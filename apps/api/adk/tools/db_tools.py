@@ -121,6 +121,23 @@ def get_report_by_id(report_id: int) -> Dict:
         db.close()
 
 
+def get_active_adk_run_by_raw_id(raw_id: int) -> Dict:
+    db: Session = SessionLocal()
+    try:
+        run = (
+            db.query(ADKRun)
+            .filter(ADKRun.raw_id == raw_id, ADKRun.status == "started")
+            .first()
+        )
+
+        if not run:
+            return {"active": False}
+
+        return {"active": True, "run_id": run.id, "status": run.status}
+    finally:
+        db.close()
+
+
 # ============Write Ops==============
 
 
