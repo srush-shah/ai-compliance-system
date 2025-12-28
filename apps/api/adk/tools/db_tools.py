@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
-from typing import Dict, List
+from typing import Dict, List, final
 
 from db import SessionLocal
 from models import (
     ADKRun,
+    ADKRunStep,
     AgentLog,
     PolicyRule,
     ProcessedData,
@@ -259,6 +260,32 @@ def list_adk_runs_by_raw_id(raw_id: int) -> List[Dict]:
         db.close()
 
 
+def get_adk_run_steps(run_id: int) -> List[Dict]:
+    db: Session = SessionLocal()
+
+    try:
+        steps = (
+            db.query(ADKRunStep)
+            .filter(ADKRunStep.adk_run_id == run_id)
+            .order_by(ADKRunStep.id.asc())
+            .all()
+        )
+
+        return [
+            {
+                "id": s.id,
+                "step": s.step,
+                "status": s.status,
+                "data": s.data,
+                "error": s.error,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+            }
+            for s in steps
+        ]
+    finally:
+        db.close()
+
+
 # ============Write Ops==============
 
 
@@ -407,5 +434,33 @@ def update_adk_run(
             "report_id": adk.report_id,
             "error": adk.error,
         }
+    finally:
+        db.close()
+
+
+def create_adk_run_step(
+    run_id: int,
+    step: str,
+    status: str,
+    data: Dict | None = None,
+    error: str | None = None,
+) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        s = ADKRunStep(
+            adk_run_id=run_id,
+            step=step,
+            status=status,
+            data=data,
+            error=error,
+            created_at=datetime.now(timezone.utc),
+        )
+
+        db.add(s)
+        db.commit()
+        db.refresh(s)
+
+        return {"id": s.id}
     finally:
         db.close()

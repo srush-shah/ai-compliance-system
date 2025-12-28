@@ -44,3 +44,9 @@ def get_runs_for_raw(raw_id: int):
     tools = get_adk_tools()
 
     return tools["list_adk_runs_by_raw_id"](raw_id)
+
+
+@router.get("/runs/{run_id}/steps")
+def get_runs_steps(run_id: int):
+    tools = get_adk_tools()
+    return tools["get_adk_run_steps"](run_id)

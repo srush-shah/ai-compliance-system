@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Column, DateTime, Float, Integer, String
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -75,3 +75,23 @@ class ADKRun(Base):
 
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class ADKRunStep(Base):
+    __tablename__ = "adk_run_steps"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    adk_run_id = Column(
+        Integer, ForeignKey("adk_runs.id", ondelete="CASCADE"), nullable=False
+    )
+
+    step = Column(String, nullable=False)  # data_engineering, compliance_checking, etc
+    status = Column(String, nullable=False)  # success | failed | skipped
+
+    data = Column(JSON, nullable=True)
+    error = Column(String, nullable=True)
+
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )

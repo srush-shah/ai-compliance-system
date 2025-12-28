@@ -10,11 +10,13 @@ from typing import Callable, Dict
 # Import existing db tools (already tested)
 from adk.tools.db_tools import (
     create_adk_run,
+    create_adk_run_step,
     create_processed_data,
     create_report,
     create_violation,
     get_active_adk_run_by_raw_id,
     get_adk_run_by_id,
+    get_adk_run_steps,
     get_latest_adk_run_by_raw_id,
     get_latest_failed_adk_run_by_raw_id,
     get_policy_rules,
@@ -47,6 +49,7 @@ def get_adk_tools() -> Dict[str, Callable]:
         "get_adk_run_by_id": get_adk_run_by_id,
         "list_adk_runs": list_adk_runs,
         "list_adk_runs_by_raw_id": list_adk_runs_by_raw_id,
+        "get_adk_run_steps": get_adk_run_steps,
         "create_processed_data": create_processed_data,
         "create_violation": create_violation,
         "create_report": create_report,
@@ -54,4 +57,5 @@ def get_adk_tools() -> Dict[str, Callable]:
         "log_agent_action": log_agent_action,
         "create_adk_run": create_adk_run,
         "update_adk_run": update_adk_run,
+        "create_adk_run_step": create_adk_run_step,
     }
