@@ -191,6 +191,74 @@ def get_latest_adk_run_by_raw_id(raw_id: int) -> Dict:
         db.close()
 
 
+def get_adk_run_by_id(run_id: int) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        run = db.query(ADKRun).filter(ADKRun.id == run_id).first()
+
+        if run is None:
+            return {"error": "not_found"}
+
+        return {
+            "id": run.id,
+            "raw_id": run.raw_id,
+            "processed_id": run.processed_id,
+            "report_id": run.report_id,
+            "status": run.status,
+            "error": run.error,
+            "created_at": run.created_at.isoformat(),
+            "updated_at": run.updated_at.isoformat() if run.updated_at else None,
+        }
+
+    finally:
+        db.close()
+
+
+def list_adk_runs(limit: int = 20) -> List[Dict]:
+    db: Session = SessionLocal()
+
+    try:
+        runs = db.query(ADKRun).order_by(ADKRun.created_at.desc()).limit(limit).all()
+
+        return [
+            {
+                "id": r.id,
+                "raw_id": r.raw_id,
+                "status": r.status,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in runs
+        ]
+    finally:
+        db.close()
+
+
+def list_adk_runs_by_raw_id(raw_id: int) -> List[Dict]:
+    db: Session = SessionLocal()
+
+    try:
+        runs = (
+            db.query(ADKRun)
+            .filter(ADKRun.raw_id == raw_id)
+            .order_by(ADKRun.created_at.desc())
+        )
+
+        return [
+            {
+                "id": r.id,
+                "status": r.status,
+                "processed_id": r.processed_id,
+                "report_id": r.report_id,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in runs
+        ]
+
+    finally:
+        db.close()
+
+
 # ============Write Ops==============
 
 
