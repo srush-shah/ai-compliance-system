@@ -10,6 +10,7 @@ from adk.agents.report_writer_agent import ReportWriterADKAgent
 from adk.agents.risk_assessor_agent import RiskAssessorADKAgent
 from adk.tools.tools_registry import get_adk_tools
 from adk.workflows.types import WorkflowResult, WorkflowStepResult
+from fastapi import HTTPException
 
 
 class ComplianceReviewWorkflow:
@@ -141,3 +142,18 @@ class ComplianceReviewWorkflow:
             report_id=report_id,
             steps=steps,
         ).model_dump()
+
+    def retry(self, raw_id: int) -> dict:
+        latest = self.tools["get_latest_adk_run_by_raw_id"](raw_id)
+
+        if "id" not in latest and "error" in latest:
+            raise HTTPException(status_code=404, detail="No previous run found")
+
+        if latest["status"] != "failed":
+            return {
+                "status": "not_allowed",
+                "messsage": "Only failed runs can be retried",
+                "run_id": latest["id"],
+            }
+
+        return self.run(raw_id=raw_id)

@@ -13,3 +13,8 @@ def run_compliance(raw_id: int):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/retry/{raw_id}")
+def retry_compliance(raw_id: int):
+    return workflow.retry(raw_id=raw_id)
