@@ -25,30 +25,45 @@ class ComplianceReviewWorkflow:
         if active.get("active"):
             return {"status": "already_running", "run_id": active["run_id"]}
 
+        failed = self.tools["get_latest_failed_adk_run_by_raw_id"](raw_id)
+        retry_processed_id = None
+
+        if "error" not in failed:
+            retry_processed_id = failed.get("processed_id")
+
         adk_run = self.tools["create_adk_run"](raw_id=raw_id, status="started")
         adk_run_id = adk_run["id"]
 
         steps = {}
 
         # 1. Data engineering
-        data_result = self.data_engineer.run(raw_id=raw_id)
-
-        if "error" in data_result:
+        if retry_processed_id:
+            processed_id = retry_processed_id
             steps["data_engineering"] = WorkflowStepResult(
-                step="data_engineering", status="failed", error=data_result["error"]
+                step="data_engineering",
+                status="skipped",
+                data={"processed_id": processed_id, "reason": "retry_reuse"},
             )
 
-            self.tools["update_adk_run"](
-                run_id=adk_run_id, status="failed", error="data engineering failed"
-            )
-            return WorkflowResult(
-                status="failed", raw_id=raw_id, steps=steps
-            ).model_dump()
+        else:
+            data_result = self.data_engineer.run(raw_id=raw_id)
 
-        processed_id = data_result["processed_id"]
-        steps["data_engineering"] = WorkflowStepResult(
-            step="data_engineering", status="success", data=data_result
-        )
+            if "error" in data_result:
+                steps["data_engineering"] = WorkflowStepResult(
+                    step="data_engineering", status="failed", error=data_result["error"]
+                )
+
+                self.tools["update_adk_run"](
+                    run_id=adk_run_id, status="failed", error="data engineering failed"
+                )
+                return WorkflowResult(
+                    status="failed", raw_id=raw_id, steps=steps
+                ).model_dump()
+
+            processed_id = data_result["processed_id"]
+            steps["data_engineering"] = WorkflowStepResult(
+                step="data_engineering", status="success", data=data_result
+            )
 
         # 2. Compliance checking
         compliance_result = self.compliance_checker.run(processed_id=processed_id)
