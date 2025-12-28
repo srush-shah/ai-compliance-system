@@ -138,6 +138,32 @@ def get_active_adk_run_by_raw_id(raw_id: int) -> Dict:
         db.close()
 
 
+def get_latest_failed_adk_run_by_raw_id(raw_id: int) -> Dict:
+    db: Session = SessionLocal()
+
+    try:
+        run = (
+            db.query(ADKRun)
+            .filter(ADKRun.raw_id == raw_id, ADKRun.status == "failed")
+            .order_by(ADKRun.created_at.desc())
+            .first()
+        )
+
+        if run is None:
+            return {"error": "not_found"}
+
+        return {
+            "id": run.id,
+            "raw_id": run.raw_id,
+            "processed_id": run.processed_id,
+            "report_id": run.report_id,
+            "error": run.error,
+            "created_at": run.created_at.isoformat(),
+        }
+    finally:
+        db.close()
+
+
 # ============Write Ops==============
 
 
