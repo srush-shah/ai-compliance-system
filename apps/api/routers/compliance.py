@@ -1,7 +1,7 @@
 from adk.workflows.compliance_workflow import ComplianceReviewWorkflow
 from fastapi import APIRouter, HTTPException
 
-from apps.api.adk.tools.tools_registry import get_adk_tools
+from adk.tools.tools_registry import get_adk_tools
 
 router = APIRouter(prefix="/compliance", tags=["compliance"])
 

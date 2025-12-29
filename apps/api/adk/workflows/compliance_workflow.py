@@ -10,7 +10,7 @@ from adk.agents.report_writer_agent import ReportWriterADKAgent
 from adk.agents.risk_assessor_agent import RiskAssessorADKAgent
 from adk.tools.tools_registry import get_adk_tools
 from adk.workflows.types import WorkflowResult, WorkflowStepResult
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 
 
 class ComplianceReviewWorkflow:

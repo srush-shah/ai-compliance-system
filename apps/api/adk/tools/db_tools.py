@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Dict, List, final
+from typing import Dict, List
 
 from db import SessionLocal
 from models import (
