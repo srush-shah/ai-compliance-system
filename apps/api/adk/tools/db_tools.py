@@ -409,6 +409,7 @@ def update_adk_run(
     processed_id: int | None = None,
     report_id: int | None = None,
     error: str | None = None,
+    error_code: str | None = None,
 ) -> Dict:
     db: Session = SessionLocal()
 
@@ -421,6 +422,7 @@ def update_adk_run(
         adk.processed_id = processed_id
         adk.report_id = report_id
         adk.error = error
+        adk.error_code = error_code
         adk.status = status
         adk.updated_at = datetime.now(timezone.utc)
 
@@ -444,6 +446,7 @@ def create_adk_run_step(
     status: str,
     data: Dict | None = None,
     error: str | None = None,
+    error_code: str | None = None,
 ) -> Dict:
     db: Session = SessionLocal()
 
@@ -454,6 +457,7 @@ def create_adk_run_step(
             status=status,
             data=data,
             error=error,
+            error_code=error_code,
             created_at=datetime.now(timezone.utc),
         )
 

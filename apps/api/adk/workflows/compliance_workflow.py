@@ -54,7 +54,9 @@ class ComplianceReviewWorkflow:
 
             if "error" in data_result:
                 steps["data_engineering"] = WorkflowStepResult(
-                    step="data_engineering", status="failed", error=data_result["error"]
+                    step="data_engineering",
+                    status="failed",
+                    error=data_result["error"],
                 )
 
                 self.tools["create_adk_run_step"](
@@ -62,10 +64,14 @@ class ComplianceReviewWorkflow:
                     step="data_engineering",
                     status="failed",
                     error=data_result["error"],
+                    error_code="DATA_ENGINEERING_FAILED",
                 )
 
                 self.tools["update_adk_run"](
-                    run_id=adk_run_id, status="failed", error="data engineering failed"
+                    run_id=adk_run_id,
+                    status="failed",
+                    error="data engineering failed",
+                    error_code="DATA_ENGINEERING_FAILED",
                 )
                 return WorkflowResult(
                     status="failed", raw_id=raw_id, steps=steps
@@ -97,10 +103,14 @@ class ComplianceReviewWorkflow:
                 step="compliance_checking",
                 status="failed",
                 error=compliance_result["error"],
+                error_code="COMPLIANCE_CHECK_FAILED",
             )
 
             self.tools["update_adk_run"](
-                run_id=adk_run_id, status="failed", error="compliance check failed"
+                run_id=adk_run_id,
+                status="failed",
+                error="compliance check failed",
+                error_code="COMPLIANCE_CHECK_FAILED",
             )
             return WorkflowResult(
                 status="failed", raw_id=raw_id, processed_id=processed_id, steps=steps
@@ -129,10 +139,14 @@ class ComplianceReviewWorkflow:
                 step="risk_assessment",
                 status="failed",
                 error=risk_result["error"],
+                error_code="RISK_ASSESSMENT_FAILED",
             )
 
             self.tools["update_adk_run"](
-                run_id=adk_run_id, status="failed", error="risk assessment failed"
+                run_id=adk_run_id,
+                status="failed",
+                error="risk assessment failed",
+                error_code="RISK_ASSESSMENT_FAILED",
             )
 
             return WorkflowResult(
@@ -163,10 +177,14 @@ class ComplianceReviewWorkflow:
                 step="report_writing",
                 status="failed",
                 error=report_result["error"],
+                error_code="REPORT_WRITING_FAILED",
             )
 
             self.tools["update_adk_run"](
-                run_id=adk_run_id, status="failed", error="report writing failed"
+                run_id=adk_run_id,
+                status="failed",
+                error="report writing failed",
+                error_code="REPORT_WRITING_FAILED",
             )
 
             return WorkflowResult(

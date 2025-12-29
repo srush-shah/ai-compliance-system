@@ -72,6 +72,7 @@ class ADKRun(Base):
 
     status = Column(String, nullable=False)  # started | completed | failed
     error = Column(String, nullable=True)
+    error_code = Column(String, nullable=True)
 
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=True)
@@ -91,6 +92,7 @@ class ADKRunStep(Base):
 
     data = Column(JSON, nullable=True)
     error = Column(String, nullable=True)
+    error_code = Column(String, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
