@@ -284,6 +284,11 @@ def get_adk_run_steps(run_id: int) -> List[Dict]:
                 "error_code": s.error_code,
                 "created_at": s.created_at.isoformat() if s.created_at else None,
                 "finished_at": s.finished_at.isoformat() if s.finished_at else None,
+                "duration_seconds": (
+                    (s.finished_at - s.created_at).total_seconds()
+                    if s.finished_at
+                    else None
+                ),
             }
             for s in steps
         ]
