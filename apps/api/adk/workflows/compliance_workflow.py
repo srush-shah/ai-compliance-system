@@ -181,7 +181,9 @@ class ComplianceReviewWorkflow:
         self.tools["finish_adk_run_step"](step["id"])
 
         # 4. Report writing
-        report_result = self.report_writer.run(report_id=report_id)
+        report_result = self.report_writer.run(
+            report_id=report_id, processed_id=processed_id
+        )
         if "error" in report_result:
             steps["report_writing"] = WorkflowStepResult(
                 step="report_writing", status="failed", error=report_result["error"]

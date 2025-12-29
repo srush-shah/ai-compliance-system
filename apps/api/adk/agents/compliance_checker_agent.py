@@ -14,13 +14,6 @@ class ComplianceCheckerADKAgent:
         self.name = "Compliance Checker"
         self.tools = get_adk_tools()
 
-    def describe(self):
-        """
-        Debug helper to verify wiring.
-        """
-
-        return {"agent": self.name, "available_tools": list(self.tools.keys())}
-
     def check_compliance(self, processed_id: int) -> Dict:
         """
         Run compliance check on processed data.

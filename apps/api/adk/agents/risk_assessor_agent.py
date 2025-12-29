@@ -15,9 +15,6 @@ class RiskAssessorADKAgent:
         self.name = "Risk Assessor"
         self.tools = get_adk_tools()
 
-    def describe(self):
-        return {"agent": self.name, "available_tools": list(self.tools.keys())}
-
     def assess_risk(self, processed_id: int) -> Dict:
         # 1. Fetch violations
         violations = self.tools["get_violations_by_processed_id"](processed_id)

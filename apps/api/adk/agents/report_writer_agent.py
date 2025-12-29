@@ -71,8 +71,5 @@ class ReportWriterADKAgent:
             "violation_count": violation_count,
         }
 
-    def run(self, report_id: int) -> Dict[str, Any]:
-        report = self.tools["get_report_by_id"](report_id)
-        processed_id = report["content"]["processed_id"]
-
+    def run(self, report_id: int, processed_id: int) -> Dict[str, Any]:
         return self.write_report(report_id=report_id, processed_id=processed_id)

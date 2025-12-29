@@ -15,10 +15,6 @@ class DataEngineerADKAgent:
         self.name = "Data Engineer"
         self.tools = get_adk_tools()
 
-    def describe(self):
-        """Debug helper to verify available tools."""
-        return {"agent": self.name, "available_tools": list(self.tools.keys())}
-
     def process_raw_data(self, raw_id: int) -> Dict:
         """
         Full processing pipeline:
