@@ -1,11 +1,14 @@
 import json
 
+from adk.tools.tools_registry import get_adk_tools
 from db import SessionLocal
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
 from models import RawData
+from services.compliance_runner import run_compliance_workflow
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/upload", tags=["upload"])
+tools = get_adk_tools()
 
 
 def get_db():
@@ -17,7 +20,11 @@ def get_db():
 
 
 @router.post("")
-async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_file(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
     content = await file.read()
 
     try:
@@ -30,4 +37,19 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     db.commit()
     db.refresh(record)
 
-    return {"status": "stored", "raw_data_id": record.id}
+    # Create an ADK run for this raw record, then start the workflow in the background
+    adk_run = tools["create_adk_run"](raw_id=record.id, status="started")
+
+    background_tasks.add_task(
+        run_compliance_workflow,
+        record.id,
+        adk_run["id"],
+        False,
+    )
+
+    return {
+        "status": "stored",
+        "raw_data_id": record.id,
+        "run_id": adk_run["id"],
+        "workflow_started": True,
+    }

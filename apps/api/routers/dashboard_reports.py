@@ -18,7 +18,6 @@ def list_reports(limit: int = 20):
                 "summary": r.summary,
                 "risk_score": r.score,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
-                "content": r.content,
             }
             for r in reports
         ]

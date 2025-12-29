@@ -11,7 +11,9 @@ class RawData(Base):
 
     id = Column(Integer, primary_key=True)
     content = Column(JSON, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class ProcessedData(Base):
@@ -19,7 +21,9 @@ class ProcessedData(Base):
 
     id = Column(Integer, primary_key=True)
     structured = Column(JSON, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class PolicyRule(Base):
@@ -38,7 +42,9 @@ class Violation(Base):
     rule = Column(String, nullable=False)
     severity = Column(String, nullable=False)
     details = Column(JSON)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class Report(Base):
@@ -48,7 +54,9 @@ class Report(Base):
     summary = Column(String)
     score = Column(Float)
     content = Column(JSON)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class AgentLog(Base):
@@ -58,7 +66,9 @@ class AgentLog(Base):
     agent_name = Column(String, nullable=False)
     action = Column(String)
     details = Column(JSON)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class ADKRun(Base):
@@ -74,7 +84,9 @@ class ADKRun(Base):
     error = Column(String, nullable=True)
     error_code = Column(String, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
     updated_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
 

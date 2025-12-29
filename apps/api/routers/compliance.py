@@ -30,7 +30,7 @@ def retry_compliance(raw_id: int, background_tasks: BackgroundTasks):
     if latest["status"] != "failed":
         return {
             "status": "not_allowed",
-            "messsage": "Only failed runs can be retried",
+            "message": "Only failed runs can be retried",
             "run_id": latest["id"],
         }
 

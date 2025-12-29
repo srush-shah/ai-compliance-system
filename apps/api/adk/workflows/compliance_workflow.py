@@ -138,7 +138,7 @@ class ComplianceReviewWorkflow:
 
         self.tools["finish_adk_run_step"](step["id"])
 
-        # 3. Risk assesssment
+        # 3. Risk assessment
         risk_result = self.risk_assessor.run(processed_id=processed_id)
         if "error" in risk_result:
             steps["risk_assessment"] = WorkflowStepResult(
