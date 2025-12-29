@@ -15,7 +15,7 @@ def run_compliance(raw_id: int, background_tasks: BackgroundTasks):
 
     adk_run = tools["create_adk_run"](raw_id=raw_id, status="started")
 
-    background_tasks.add_task(run_compliance_workflow, raw_id, adk_run['id'], False)
+    background_tasks.add_task(run_compliance_workflow, raw_id, adk_run["id"], False)
 
     return {"status": "started", "run_id": adk_run["id"]}
 
@@ -34,11 +34,24 @@ def retry_compliance(raw_id: int, background_tasks: BackgroundTasks):
             "run_id": latest["id"],
         }
 
+    retryable_error_codes = [
+        "DATA_ENGINEERING_FAILED",
+        "COMPLIANCE_CHECK_FAILED",
+    ]
+
+    if latest.get("error_code") not in retryable_error_codes:
+        return {
+            "status": "not_allowed",
+            "message": "Failure type is not retryable",
+            "run_id": latest["id"],
+            "error_code": latest.get("error_code"),
+        }
+
     adk_run = tools["create_adk_run"](raw_id=raw_id, status="started")
 
-    background_tasks.add_task(run_compliance_workflow, raw_id, adk_run['id'], True)
+    background_tasks.add_task(run_compliance_workflow, raw_id, adk_run["id"], True)
 
-    return {"status": "started", "run_id": adk_run["id"]}
+    return {"status": "started", "run_id": adk_run["id"], "retry_of": latest["id"]}
 
 
 @router.get("/runs")
