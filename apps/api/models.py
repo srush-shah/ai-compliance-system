@@ -76,6 +76,7 @@ class ADKRun(Base):
 
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class ADKRunStep(Base):

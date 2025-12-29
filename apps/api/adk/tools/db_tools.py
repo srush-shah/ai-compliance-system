@@ -161,6 +161,13 @@ def get_latest_failed_adk_run_by_raw_id(raw_id: int) -> Dict:
             "error": run.error,
             "error_code": run.error_code,
             "created_at": run.created_at.isoformat(),
+            "updated_at": run.updated_at.isoformat(),
+            "completed_at": run.completed_at.isoformat(),
+            "duration_seconds": (
+                (run.created_at - run.completed_at).total_seconds()
+                if run.completed_at
+                else None
+            ),
         }
     finally:
         db.close()
@@ -188,6 +195,13 @@ def get_latest_adk_run_by_raw_id(raw_id: int) -> Dict:
             "processed_id": run.processed_id,
             "report_id": run.report_id,
             "created_at": run.created_at.isoformat(),
+            "updated_at": run.updated_at.isoformat(),
+            "completed_at": run.completed_at.isoformat(),
+            "duration_seconds": (
+                (run.created_at - run.completed_at).total_seconds()
+                if run.completed_at
+                else None
+            ),
         }
 
     finally:
@@ -213,6 +227,12 @@ def get_adk_run_by_id(run_id: int) -> Dict:
             "error_code": run.error_code,
             "created_at": run.created_at.isoformat(),
             "updated_at": run.updated_at.isoformat() if run.updated_at else None,
+            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "duration_seconds": (
+                (run.completed_at - run.created_at).total_seconds()
+                if run.completed_at
+                else None
+            ),
         }
 
     finally:
@@ -231,6 +251,13 @@ def list_adk_runs(limit: int = 20) -> List[Dict]:
                 "raw_id": r.raw_id,
                 "status": r.status,
                 "created_at": r.created_at.isoformat(),
+                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+                "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+                "duration_seconds": (
+                    (r.created_at - r.completed_at).total_seconds()
+                    if r.completed_at
+                    else None
+                ),
             }
             for r in runs
         ]
@@ -255,6 +282,13 @@ def list_adk_runs_by_raw_id(raw_id: int) -> List[Dict]:
                 "processed_id": r.processed_id,
                 "report_id": r.report_id,
                 "created_at": r.created_at.isoformat(),
+                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+                "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+                "duration_seconds": (
+                    (r.created_at - r.completed_at).total_seconds()
+                    if r.completed_at
+                    else None
+                ),
             }
             for r in runs
         ]
@@ -435,6 +469,9 @@ def update_adk_run(
         adk.error_code = error_code
         adk.status = status
         adk.updated_at = datetime.now(timezone.utc)
+
+        if status in ("completed", "failed"):
+            adk.completed_at = datetime.now(timezone.utc)
 
         db.commit()
         db.refresh(adk)
