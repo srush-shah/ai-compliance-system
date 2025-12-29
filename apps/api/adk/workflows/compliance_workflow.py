@@ -10,7 +10,6 @@ from adk.agents.report_writer_agent import ReportWriterADKAgent
 from adk.agents.risk_assessor_agent import RiskAssessorADKAgent
 from adk.tools.tools_registry import get_adk_tools
 from adk.workflows.types import WorkflowResult, WorkflowStepResult
-from fastapi import HTTPException
 
 
 class ComplianceReviewWorkflow:
@@ -21,19 +20,16 @@ class ComplianceReviewWorkflow:
         self.report_writer = ReportWriterADKAgent()
         self.tools = get_adk_tools()
 
-    def run(self, raw_id: int) -> dict:
-        active = self.tools["get_active_adk_run_by_raw_id"](raw_id)
-        if active.get("active"):
-            return {"status": "already_running", "run_id": active["run_id"]}
+    def run(self, raw_id: int, run_id: int, is_retry: bool = False) -> dict:
 
-        failed = self.tools["get_latest_failed_adk_run_by_raw_id"](raw_id)
         retry_processed_id = None
 
-        if "error" not in failed:
-            retry_processed_id = failed.get("processed_id")
+        if is_retry:
+            failed = self.tools["get_latest_failed_adk_run_by_raw_id"](raw_id)
+            if "id" in failed and failed.get("processed_id"):
+                retry_processed_id = failed.get("processed_id")
 
-        adk_run = self.tools["create_adk_run"](raw_id=raw_id, status="started")
-        adk_run_id = adk_run["id"]
+        adk_run_id = run_id
 
         steps = {}
 
@@ -150,7 +146,7 @@ class ComplianceReviewWorkflow:
 
         self.tools["create_adk_run_step"](
             run_id=adk_run_id,
-            step="risk_assessmet",
+            step="risk_assessment",
             status="success",
             data=risk_result,
         )
@@ -205,18 +201,3 @@ class ComplianceReviewWorkflow:
             report_id=report_id,
             steps=steps,
         ).model_dump()
-
-    def retry(self, raw_id: int) -> dict:
-        latest = self.tools["get_latest_adk_run_by_raw_id"](raw_id)
-
-        if "id" not in latest and "error" in latest:
-            raise HTTPException(status_code=404, detail="No previous run found")
-
-        if latest["status"] != "failed":
-            return {
-                "status": "not_allowed",
-                "messsage": "Only failed runs can be retried",
-                "run_id": latest["id"],
-            }
-
-        return self.run(raw_id=raw_id)
