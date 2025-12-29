@@ -95,5 +95,8 @@ class ADKRunStep(Base):
     error_code = Column(String, nullable=True)
 
     created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
+    finished_at = Column(DateTime(timezone=True), nullable=True)

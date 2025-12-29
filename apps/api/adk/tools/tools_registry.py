@@ -14,6 +14,7 @@ from adk.tools.db_tools import (
     create_processed_data,
     create_report,
     create_violation,
+    finish_adk_run_step,
     get_active_adk_run_by_raw_id,
     get_adk_run_by_id,
     get_adk_run_steps,
@@ -58,4 +59,5 @@ def get_adk_tools() -> Dict[str, Callable]:
         "create_adk_run": create_adk_run,
         "update_adk_run": update_adk_run,
         "create_adk_run_step": create_adk_run_step,
+        "finish_adk_run_step": finish_adk_run_step,
     }

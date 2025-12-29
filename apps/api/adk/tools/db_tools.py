@@ -159,6 +159,7 @@ def get_latest_failed_adk_run_by_raw_id(raw_id: int) -> Dict:
             "processed_id": run.processed_id,
             "report_id": run.report_id,
             "error": run.error,
+            "error_code": run.error_code,
             "created_at": run.created_at.isoformat(),
         }
     finally:
@@ -183,6 +184,7 @@ def get_latest_adk_run_by_raw_id(raw_id: int) -> Dict:
             "id": run.id,
             "status": run.status,
             "error": run.error,
+            "error_code": run.error_code,
             "processed_id": run.processed_id,
             "report_id": run.report_id,
             "created_at": run.created_at.isoformat(),
@@ -208,6 +210,7 @@ def get_adk_run_by_id(run_id: int) -> Dict:
             "report_id": run.report_id,
             "status": run.status,
             "error": run.error,
+            "error_code": run.error_code,
             "created_at": run.created_at.isoformat(),
             "updated_at": run.updated_at.isoformat() if run.updated_at else None,
         }
@@ -278,7 +281,9 @@ def get_adk_run_steps(run_id: int) -> List[Dict]:
                 "status": s.status,
                 "data": s.data,
                 "error": s.error,
+                "error_code": s.error_code,
                 "created_at": s.created_at.isoformat() if s.created_at else None,
+                "finished_at": s.finished_at.isoformat() if s.finished_at else None,
             }
             for s in steps
         ]
@@ -435,6 +440,7 @@ def update_adk_run(
             "processed_id": adk.processed_id,
             "report_id": adk.report_id,
             "error": adk.error,
+            "error_code": adk.error_code,
         }
     finally:
         db.close()
@@ -466,5 +472,20 @@ def create_adk_run_step(
         db.refresh(s)
 
         return {"id": s.id}
+    finally:
+        db.close()
+
+
+def finish_adk_run_step(step_id: int) -> Dict:
+    db: Session = SessionLocal()
+    try:
+        step = db.query(ADKRunStep).filter(ADKRunStep.id == step_id).first()
+        if step is None:
+            return {"error": "not_found"}
+
+        step.finished_at = datetime.now(timezone.utc)
+        db.commit()
+        return {"id": step.id}
+
     finally:
         db.close()

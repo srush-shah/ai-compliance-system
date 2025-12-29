@@ -42,12 +42,13 @@ class ComplianceReviewWorkflow:
                 data={"processed_id": processed_id, "reason": "retry_reuse"},
             )
 
-            self.tools["create_adk_run_step"](
+            step = self.tools["create_adk_run_step"](
                 run_id=adk_run_id,
                 step="data_engineering",
                 status="skipped",
                 data={"processed_id": processed_id, "reason": "retry_reuse"},
             )
+            self.tools["finish_adk_run_step"](step["id"])
 
         else:
             data_result = self.data_engineer.run(raw_id=raw_id)
@@ -59,7 +60,7 @@ class ComplianceReviewWorkflow:
                     error=data_result["error"],
                 )
 
-                self.tools["create_adk_run_step"](
+                step = self.tools["create_adk_run_step"](
                     run_id=adk_run_id,
                     step="data_engineering",
                     status="failed",
@@ -67,12 +68,15 @@ class ComplianceReviewWorkflow:
                     error_code="DATA_ENGINEERING_FAILED",
                 )
 
+                self.tools["finish_adk_run_step"](step["id"])
+
                 self.tools["update_adk_run"](
                     run_id=adk_run_id,
                     status="failed",
                     error="data engineering failed",
                     error_code="DATA_ENGINEERING_FAILED",
                 )
+
                 return WorkflowResult(
                     status="failed", raw_id=raw_id, steps=steps
                 ).model_dump()
@@ -82,12 +86,14 @@ class ComplianceReviewWorkflow:
                 step="data_engineering", status="success", data=data_result
             )
 
-            self.tools["create_adk_run_step"](
+            step = self.tools["create_adk_run_step"](
                 run_id=adk_run_id,
                 step="data_engineering",
                 status="success",
                 data=data_result,
             )
+
+            self.tools["finish_adk_run_step"](step["id"])
 
         # 2. Compliance checking
         compliance_result = self.compliance_checker.run(processed_id=processed_id)
@@ -98,7 +104,7 @@ class ComplianceReviewWorkflow:
                 error=compliance_result["error"],
             )
 
-            self.tools["create_adk_run_step"](
+            step = self.tools["create_adk_run_step"](
                 run_id=adk_run_id,
                 step="compliance_checking",
                 status="failed",
@@ -106,12 +112,15 @@ class ComplianceReviewWorkflow:
                 error_code="COMPLIANCE_CHECK_FAILED",
             )
 
+            self.tools["finish_adk_run_step"](step["id"])
+
             self.tools["update_adk_run"](
                 run_id=adk_run_id,
                 status="failed",
                 error="compliance check failed",
                 error_code="COMPLIANCE_CHECK_FAILED",
             )
+
             return WorkflowResult(
                 status="failed", raw_id=raw_id, processed_id=processed_id, steps=steps
             ).model_dump()
@@ -120,12 +129,14 @@ class ComplianceReviewWorkflow:
             step="compliance_checking", status="success", data=compliance_result
         )
 
-        self.tools["create_adk_run_step"](
+        step = self.tools["create_adk_run_step"](
             run_id=adk_run_id,
             step="compliance_checking",
             status="success",
             data=compliance_result,
         )
+
+        self.tools["finish_adk_run_step"](step["id"])
 
         # 3. Risk assesssment
         risk_result = self.risk_assessor.run(processed_id=processed_id)
@@ -134,13 +145,15 @@ class ComplianceReviewWorkflow:
                 step="risk_assessment", status="failed", error=risk_result["error"]
             )
 
-            self.tools["create_adk_run_step"](
+            step = self.tools["create_adk_run_step"](
                 run_id=adk_run_id,
                 step="risk_assessment",
                 status="failed",
                 error=risk_result["error"],
                 error_code="RISK_ASSESSMENT_FAILED",
             )
+
+            self.tools["finish_adk_run_step"](step["id"])
 
             self.tools["update_adk_run"](
                 run_id=adk_run_id,
@@ -158,12 +171,14 @@ class ComplianceReviewWorkflow:
             step="risk_assessment", status="success", data=risk_result
         )
 
-        self.tools["create_adk_run_step"](
+        step = self.tools["create_adk_run_step"](
             run_id=adk_run_id,
             step="risk_assessment",
             status="success",
             data=risk_result,
         )
+
+        self.tools["finish_adk_run_step"](step["id"])
 
         # 4. Report writing
         report_result = self.report_writer.run(report_id=report_id)
@@ -172,13 +187,15 @@ class ComplianceReviewWorkflow:
                 step="report_writing", status="failed", error=report_result["error"]
             )
 
-            self.tools["create_adk_run_step"](
+            step = self.tools["create_adk_run_step"](
                 run_id=adk_run_id,
                 step="report_writing",
                 status="failed",
                 error=report_result["error"],
                 error_code="REPORT_WRITING_FAILED",
             )
+
+            self.tools["finish_adk_run_step"](step["id"])
 
             self.tools["update_adk_run"](
                 run_id=adk_run_id,
@@ -199,12 +216,14 @@ class ComplianceReviewWorkflow:
             step="report_writing", status="success", data=report_result
         )
 
-        self.tools["create_adk_run_step"](
+        step = self.tools["create_adk_run_step"](
             run_id=adk_run_id,
             step="report_writing",
             status="success",
             data=report_result,
         )
+
+        self.tools["finish_adk_run_step"](step["id"])
 
         self.tools["update_adk_run"](
             run_id=adk_run_id,
@@ -212,6 +231,7 @@ class ComplianceReviewWorkflow:
             report_id=report_id,
             status="completed",
         )
+
         return WorkflowResult(
             status="completed",
             raw_id=raw_id,
