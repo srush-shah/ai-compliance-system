@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from db import SessionLocal
 from models import (
@@ -377,10 +377,19 @@ def get_adk_run_steps(run_id: int) -> List[Dict]:
 # ============Write Ops==============
 
 
-def create_processed_data(raw_id: int, structured: Dict) -> Dict:
+def create_processed_data(raw_id: int, structured: Any) -> Dict:
     db: Session = SessionLocal()
 
     try:
+        # Ensure raw_id is included in structured JSON
+        if isinstance(structured, dict):
+            # Always include raw_id, overwriting if it exists to ensure consistency
+            structured_with_raw = {"raw_id": raw_id, **structured}
+            structured = structured_with_raw
+        else:
+            # If structured is not a dict, wrap it
+            structured = {"raw_id": raw_id, "structured": structured}
+
         p = ProcessedData(structured=structured)
 
         db.add(p)
@@ -392,9 +401,7 @@ def create_processed_data(raw_id: int, structured: Dict) -> Dict:
         db.close()
 
 
-def create_violation(
-    processed_id: int, rule: str, severity: str, details: Dict
-) -> Dict:
+def create_violation(processed_id: int, rule: str, severity: str, details: Any) -> Dict:
 
     db: Session = SessionLocal()
 
@@ -413,7 +420,7 @@ def create_violation(
         db.close()
 
 
-def create_report(processed_id: int, score: int, summary: str, content: Dict) -> Dict:
+def create_report(processed_id: int, score: int, summary: str, content: Any) -> Dict:
     db: Session = SessionLocal()
 
     try:
@@ -434,7 +441,7 @@ def create_report(processed_id: int, score: int, summary: str, content: Dict) ->
         db.close()
 
 
-def update_report(report_id: int, summary: str, content: Dict, score: int) -> Dict:
+def update_report(report_id: int, summary: str, content: Any, score: int) -> Dict:
     db: Session = SessionLocal()
 
     try:
@@ -456,7 +463,7 @@ def update_report(report_id: int, summary: str, content: Dict, score: int) -> Di
         db.close()
 
 
-def log_agent_action(agent_name: str, action: str, details: Dict) -> Dict:
+def log_agent_action(agent_name: str, action: str, details: Any) -> Dict:
 
     db: Session = SessionLocal()
 
@@ -540,7 +547,7 @@ def create_adk_run_step(
     run_id: int,
     step: str,
     status: str,
-    data: Dict | None = None,
+    data: Any | None = None,
     error: str | None = None,
     error_code: str | None = None,
 ) -> Dict:

@@ -41,6 +41,7 @@ class DataEngineerADKAgent:
 
         # For now, we just wrap the data in a dict and add metadata
         structured_data = {
+            "raw_id": raw_id,  # IMPORTANT: include raw_id for tracking
             "length": len(text_content),
             "content_preview": (
                 text_content[:200]
@@ -54,8 +55,14 @@ class DataEngineerADKAgent:
 
         # 3. Store as processed data in DB
         db = self.tools.get("create_processed_data")
+        if db is None:
+            return {"error": "'create_processed_data' tool not available", "raw_id": raw_id}
 
-        processed_id = db(raw_id=raw_id, structured=structured_data)["id"]
+        processed_result = db(raw_id=raw_id, structured=structured_data)
+        if not processed_result or "id" not in processed_result:
+            return {"error": "failed to store processed data", "raw_id": raw_id}
+
+        processed_id = processed_result["id"]
 
         # 4. Log Agent Action
         self.tools["log_agent_action"](

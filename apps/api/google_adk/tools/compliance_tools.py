@@ -1,7 +1,7 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
-def match_policy_rules(content_text: str, rules: List[Dict]) -> List[Dict]:
+def match_policy_rules(content_text: str, rules: List[Any]) -> List[Dict]:
     """
     Deterministic matching tool:
     returns rules whose name appears as substring in content_text (case-insensitive).

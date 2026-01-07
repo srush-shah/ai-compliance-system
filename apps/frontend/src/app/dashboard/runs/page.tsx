@@ -52,7 +52,7 @@ export default async function ADKRunsPage() {
               Run #{run.id} (Raw ID: {run.raw_id}) - {run.status}
             </div>
             <div className="text-sm text-gray-500">
-              Created: {new Date(run.created_at).toISOString().replace('T', ' ').slice(0, 19)}
+              Created: {run.created_at ? run.created_at.replace('T', ' ').slice(0, 19) : 'N/A'}
             </div>
             {Array.isArray(run.steps) && run.steps.length > 0 ? (
               <div className="mt-2 space-y-1 text-sm">
