@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 export default function RunWorkflowPage() {
   const [rawId, setRawId] = useState("");
@@ -9,18 +10,28 @@ export default function RunWorkflowPage() {
     e.preventDefault();
     setStatus("Starting run...");
 
-    const res = await fetch(`/compliance/run/${rawId}`, { method: "POST" });
-    const data = await res.json();
-    setStatus(JSON.stringify(data, null, 2));
+    try {
+      const data = await apiFetch(`/compliance/run/${rawId}`, {
+        method: "POST",
+      });
+      setStatus(JSON.stringify(data, null, 2));
+    } catch (err) {
+      setStatus(`Error starting run: ${String(err)}`);
+    }
   }
 
   async function handleRetry(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     setStatus("Retrying run...");
 
-    const res = await fetch(`/compliance/retry/${rawId}`, { method: "POST" });
-    const data = await res.json();
-    setStatus(JSON.stringify(data, null, 2));
+    try {
+      const data = await apiFetch(`/compliance/retry/${rawId}`, {
+        method: "POST",
+      });
+      setStatus(JSON.stringify(data, null, 2));
+    } catch (err) {
+      setStatus(`Error retrying run: ${String(err)}`);
+    }
   }
 
   return (

@@ -36,6 +36,7 @@ ENV/
 env.bak/
 venv.bak/
 ai-compliance/
+venv-adk/
 *.venv
 
 # IDEs
@@ -89,3 +90,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#pyright config
+pyrightconfig.json

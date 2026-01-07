@@ -1,4 +1,5 @@
 import json
+from typing import cast
 
 from adk.tools.tools_registry import get_adk_tools
 from db import SessionLocal
@@ -37,12 +38,15 @@ async def upload_file(
     db.commit()
     db.refresh(record)
 
+    # After commit/refresh, SQLAlchemy will have populated the integer primary key.
+    raw_id = cast(int, record.id)
+
     # Create an ADK run for this raw record, then start the workflow in the background
-    adk_run = tools["create_adk_run"](raw_id=record.id, status="started")
+    adk_run = tools["create_adk_run"](raw_id=raw_id, status="started")
 
     background_tasks.add_task(
         run_compliance_workflow,
-        record.id,
+        raw_id,
         adk_run["id"],
         False,
     )

@@ -20,7 +20,9 @@ def list_violations(limit: int = 50):
                 "rule": v.rule,
                 "severity": v.severity,
                 "details": v.details,
-                "created_at": v.created_at.isoformat() if v.created_at else None,
+                "created_at": (
+                    v.created_at.isoformat() if v.created_at is not None else None
+                ),
             }
             for v in violations
         ]

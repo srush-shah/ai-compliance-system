@@ -57,6 +57,8 @@ class Report(Base):
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    # Optional timestamp for later updates via `update_report`
+    updated_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class AgentLog(Base):
