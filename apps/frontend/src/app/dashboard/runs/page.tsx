@@ -65,6 +65,8 @@ export default async function ADKRunsPage() {
                         ? "text-green-600"
                         : step.status === "failed"
                         ? "text-red-600"
+                        : step.status === "started"
+                        ? "text-blue-600"
                         : "text-gray-600"
                     }
                   >

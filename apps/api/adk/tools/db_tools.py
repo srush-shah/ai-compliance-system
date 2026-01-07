@@ -47,7 +47,9 @@ def get_raw_data_by_id(raw_id: int) -> Dict:
         return {
             "id": r.id,
             "content": r.content,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "created_at": (
+                r.created_at.isoformat() if r.created_at is not None else None
+            ),
         }
     finally:
         db.close()
@@ -65,7 +67,9 @@ def get_processed_data_by_id(processed_id: int) -> Dict:
         return {
             "id": p.id,
             "structured": p.structured,
-            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "created_at": (
+                p.created_at.isoformat() if p.created_at is not None else None
+            ),
         }
     finally:
         db.close()
@@ -78,7 +82,7 @@ def get_policy_rules() -> List[Dict]:
         rules = db.query(PolicyRule).all()
 
         if not rules:
-            return {"error": "no policies found"}
+            return [{"error": "no policies found"}]
 
         return [
             {
@@ -112,7 +116,9 @@ def get_violations_by_processed_id(processed_id: int) -> List[Dict]:
                 "rule": v.rule,
                 "severity": v.severity,
                 "details": v.details,
-                "created_at": v.created_at.isoformat() if v.created_at else None,
+                "created_at": (
+                    v.created_at.isoformat() if v.created_at is not None else None
+                ),
             }
             for v in violations
         ]
@@ -132,7 +138,9 @@ def get_report_by_id(report_id: int) -> Dict:
             "summary": r.summary,
             "score": r.score,
             "content": r.content,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "created_at": (
+                r.created_at.isoformat() if r.created_at is not None else None
+            ),
         }
 
     finally:
@@ -178,10 +186,15 @@ def get_latest_failed_adk_run_by_raw_id(raw_id: int) -> Dict:
             "error": run.error,
             "error_code": run.error_code,
             "created_at": run.created_at.isoformat(),
-            "updated_at": run.updated_at.isoformat() if run.updated_at else None,
-            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "updated_at": (
+                run.updated_at.isoformat() if run.updated_at is not None else None
+            ),
+            "completed_at": (
+                run.completed_at.isoformat() if run.completed_at is not None else None
+            ),
             "duration_seconds": _calculate_duration_seconds(
-                run.created_at, run.completed_at
+                run.created_at if isinstance(run.created_at, datetime) else None,
+                run.completed_at if isinstance(run.completed_at, datetime) else None,
             ),
         }
     finally:
@@ -210,10 +223,15 @@ def get_latest_adk_run_by_raw_id(raw_id: int) -> Dict:
             "processed_id": run.processed_id,
             "report_id": run.report_id,
             "created_at": run.created_at.isoformat(),
-            "updated_at": run.updated_at.isoformat() if run.updated_at else None,
-            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "updated_at": (
+                run.updated_at.isoformat() if run.updated_at is not None else None
+            ),
+            "completed_at": (
+                run.completed_at.isoformat() if run.completed_at is not None else None
+            ),
             "duration_seconds": _calculate_duration_seconds(
-                run.created_at, run.completed_at
+                run.created_at if isinstance(run.created_at, datetime) else None,
+                run.completed_at if isinstance(run.completed_at, datetime) else None,
             ),
         }
 
@@ -239,10 +257,15 @@ def get_adk_run_by_id(run_id: int) -> Dict:
             "error": run.error,
             "error_code": run.error_code,
             "created_at": run.created_at.isoformat(),
-            "updated_at": run.updated_at.isoformat() if run.updated_at else None,
-            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "updated_at": (
+                run.updated_at.isoformat() if run.updated_at is not None else None
+            ),
+            "completed_at": (
+                run.completed_at.isoformat() if run.completed_at is not None else None
+            ),
             "duration_seconds": _calculate_duration_seconds(
-                run.created_at, run.completed_at
+                run.created_at if isinstance(run.created_at, datetime) else None,
+                run.completed_at if isinstance(run.completed_at, datetime) else None,
             ),
         }
 
@@ -262,10 +285,15 @@ def list_adk_runs(limit: int = 20) -> List[Dict]:
                 "raw_id": r.raw_id,
                 "status": r.status,
                 "created_at": r.created_at.isoformat(),
-                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
-                "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+                "updated_at": (
+                    r.updated_at.isoformat() if r.updated_at is not None else None
+                ),
+                "completed_at": (
+                    r.completed_at.isoformat() if r.completed_at is not None else None
+                ),
                 "duration_seconds": _calculate_duration_seconds(
-                    r.created_at, r.completed_at
+                    r.created_at if isinstance(r.created_at, datetime) else None,
+                    r.completed_at if isinstance(r.completed_at, datetime) else None,
                 ),
             }
             for r in runs
@@ -292,10 +320,15 @@ def list_adk_runs_by_raw_id(raw_id: int) -> List[Dict]:
                 "processed_id": r.processed_id,
                 "report_id": r.report_id,
                 "created_at": r.created_at.isoformat(),
-                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
-                "completed_at": r.completed_at.isoformat() if r.completed_at else None,
+                "updated_at": (
+                    r.updated_at.isoformat() if r.updated_at is not None else None
+                ),
+                "completed_at": (
+                    r.completed_at.isoformat() if r.completed_at is not None else None
+                ),
                 "duration_seconds": _calculate_duration_seconds(
-                    r.created_at, r.completed_at
+                    r.created_at if isinstance(r.created_at, datetime) else None,
+                    r.completed_at if isinstance(r.completed_at, datetime) else None,
                 ),
             }
             for r in runs
@@ -324,10 +357,15 @@ def get_adk_run_steps(run_id: int) -> List[Dict]:
                 "data": s.data,
                 "error": s.error,
                 "error_code": s.error_code,
-                "created_at": s.created_at.isoformat() if s.created_at else None,
-                "finished_at": s.finished_at.isoformat() if s.finished_at else None,
+                "created_at": (
+                    s.created_at.isoformat() if s.created_at is not None else None
+                ),
+                "finished_at": (
+                    s.finished_at.isoformat() if s.finished_at is not None else None
+                ),
                 "duration_seconds": _calculate_duration_seconds(
-                    s.created_at, s.finished_at
+                    s.created_at if isinstance(s.created_at, datetime) else None,
+                    s.finished_at if isinstance(s.finished_at, datetime) else None,
                 ),
             }
             for s in steps
@@ -405,10 +443,10 @@ def update_report(report_id: int, summary: str, content: Dict, score: int) -> Di
         if r is None:
             return {"error": "not_found"}
 
-        r.summary = summary
-        r.content = content
-        r.score = score
-        r.updated_at = datetime.now(timezone.utc)
+        setattr(r, "summary", summary)
+        setattr(r, "content", content)
+        setattr(r, "score", score)
+        setattr(r, "updated_at", datetime.now(timezone.utc))
 
         db.commit()
         db.refresh(r)
@@ -469,15 +507,19 @@ def update_adk_run(
         if adk is None:
             return {"error": "not_found"}
 
-        adk.processed_id = processed_id
-        adk.report_id = report_id
-        adk.error = error
-        adk.error_code = error_code
-        adk.status = status
-        adk.updated_at = datetime.now(timezone.utc)
+        if processed_id is not None:
+            setattr(adk, "processed_id", processed_id)
+        if report_id is not None:
+            setattr(adk, "report_id", report_id)
+        if error is not None:
+            setattr(adk, "error", error)
+        if error_code is not None:
+            setattr(adk, "error_code", error_code)
+        setattr(adk, "status", status)
+        setattr(adk, "updated_at", datetime.now(timezone.utc))
 
         if status in ("completed", "failed"):
-            adk.completed_at = datetime.now(timezone.utc)
+            setattr(adk, "completed_at", datetime.now(timezone.utc))
 
         db.commit()
         db.refresh(adk)
@@ -534,7 +576,7 @@ def finish_adk_run_step(step_id: int) -> Dict:
         if step is None:
             return {"error": "not_found"}
 
-        step.finished_at = datetime.now(timezone.utc)
+        setattr(step, "finished_at", datetime.now(timezone.utc))
         db.commit()
         return {"id": step.id}
 

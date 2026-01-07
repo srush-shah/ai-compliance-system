@@ -37,6 +37,9 @@ def retry_compliance(raw_id: int, background_tasks: BackgroundTasks):
     retryable_error_codes = [
         "DATA_ENGINEERING_FAILED",
         "COMPLIANCE_CHECK_FAILED",
+        "GOOGLE_ADK_NO_FINAL_OUTPUT",
+        "GOOGLE_ADK_FAILED",
+        "GOOGLE_ADK_EXCEPTION",
     ]
 
     if latest.get("error_code") not in retryable_error_codes:

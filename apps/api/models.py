@@ -103,7 +103,7 @@ class ADKRunStep(Base):
     )
 
     step = Column(String, nullable=False)  # data_engineering, compliance_checking, etc
-    status = Column(String, nullable=False)  # success | failed | skipped
+    status = Column(String, nullable=False)  # started | success | failed | skipped
 
     data = Column(JSON, nullable=True)
     error = Column(String, nullable=True)
