@@ -9,6 +9,7 @@ export default function UploadPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -81,8 +82,16 @@ export default function UploadPage() {
               required
               className="sr-only"
               disabled={isUploading}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                setSelectedFileName(file ? file.name : null);
+              }}
             />
           </label>
+
+          <div className="text-xs text-gray-500">
+            {selectedFileName ? `Selected file: ${selectedFileName}` : "No file selected yet."}
+          </div>
 
           {error && (
             <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
