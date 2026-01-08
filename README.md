@@ -135,12 +135,14 @@ All tables include `created_at` timestamps (UTC).
 
 ## Frontend Pages
 
-- **`/`** - File upload interface
-- **`/dashboard`** - Reports overview (risk scores, summaries)
+- **`/`** - Upload landing page with file selection, inline status, and navigation to the dashboard
+- **`/dashboard`** - Dashboard home with recent runs, reports, and violations
+- **`/dashboard/reports`** - Reports list with risk scores and timestamps
 - **`/dashboard/violations`** - Compliance violations list
-- **`/dashboard/agents`** - Agent activity logs
+- **`/dashboard/runs`** - Runs list with auto-refreshing status
+- **`/dashboard/runs/[runId]`** - Run details with step timeline and fallback indicator
 
-All dashboard pages use server-side rendering and fetch data from the FastAPI backend.
+Dashboard pages use server-side rendering where possible and client-side polling for live run status.
 
 ## Setup Instructions
 
@@ -213,6 +215,43 @@ All dashboard pages use server-side rendering and fetch data from the FastAPI ba
 ### Frontend (`apps/frontend/.env.local`)
 - `NEXT_PUBLIC_API_URL` - Backend API base URL (default: `http://localhost:8000`)
 
+## Deploy
+
+### Local development
+
+Backend:
+```bash
+cd apps/api
+python3.13 -m venv ai-compliance
+source ai-compliance/bin/activate
+pip install -r requirements.txt
+python create_tables.py
+uvicorn main:app --reload
+```
+
+Frontend:
+```bash
+cd apps/frontend
+npm install
+npm run dev
+```
+
+### Docker Compose
+
+1. Set `GOOGLE_API_KEY` in your shell or `.env` file before starting.
+2. Start the stack:
+```bash
+docker-compose up --build
+```
+
+Services:
+- API: http://localhost:8000
+- Frontend: http://localhost:3000
+
+### Gemini quota and fallback behavior
+
+The Google ADK workflow can hit Gemini free tier quota limits. When that happens, the system falls back to manual agents and logs a fallback step so the dashboard can show it.
+
 ## Current Limitations & Stubbed Features
 
 The following features are implemented with basic functionality and may be enhanced in future phases:
@@ -242,4 +281,3 @@ The following features are implemented with basic functionality and may be enhan
 - Enhance UI with charts, filters, and advanced visualizations
 - Implement audit logging and compliance tracking
 - Add support for multiple file formats and data sources
-

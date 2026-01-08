@@ -37,6 +37,10 @@ export default function RunWorkflowPage() {
   return (
     <div className="p-4 space-y-4">
       <h1 className="text-2xl font-semibold">Trigger ADK Workflow</h1>
+      <p className="text-sm text-gray-600">
+        If Google ADK fails or runs out of quota, the system uses manual agents
+        and logs a fallback step.
+      </p>
       <form onSubmit={handleRun} className="space-x-2">
         <input
           type="number"

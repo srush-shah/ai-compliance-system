@@ -284,6 +284,10 @@ def list_adk_runs(limit: int = 20) -> List[Dict]:
                 "id": r.id,
                 "raw_id": r.raw_id,
                 "status": r.status,
+                "error": r.error,
+                "error_code": r.error_code,
+                "processed_id": r.processed_id,
+                "report_id": r.report_id,
                 "created_at": r.created_at.isoformat(),
                 "updated_at": (
                     r.updated_at.isoformat() if r.updated_at is not None else None
@@ -557,6 +561,10 @@ def create_adk_run_step(
     db: Session = SessionLocal()
 
     try:
+        finished_at = None
+        if status in ("success", "failed", "skipped"):
+            finished_at = datetime.now(timezone.utc)
+
         s = ADKRunStep(
             adk_run_id=run_id,
             step=step,
@@ -565,6 +573,7 @@ def create_adk_run_step(
             error=error,
             error_code=error_code,
             created_at=datetime.now(timezone.utc),
+            finished_at=finished_at,
         )
 
         db.add(s)
