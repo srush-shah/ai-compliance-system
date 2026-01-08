@@ -135,12 +135,14 @@ All tables include `created_at` timestamps (UTC).
 
 ## Frontend Pages
 
-- **`/`** - File upload interface
-- **`/dashboard`** - Reports overview (risk scores, summaries)
+- **`/`** - Upload landing page with file selection, inline status, and navigation to the dashboard
+- **`/dashboard`** - Dashboard home with recent runs, reports, and violations
+- **`/dashboard/reports`** - Reports list with risk scores and timestamps
 - **`/dashboard/violations`** - Compliance violations list
-- **`/dashboard/agents`** - Agent activity logs
+- **`/dashboard/runs`** - Runs list with auto-refreshing status
+- **`/dashboard/runs/[runId]`** - Run details with step timeline and fallback indicator
 
-All dashboard pages use server-side rendering and fetch data from the FastAPI backend.
+Dashboard pages use server-side rendering where possible and client-side polling for live run status.
 
 ## Setup Instructions
 
