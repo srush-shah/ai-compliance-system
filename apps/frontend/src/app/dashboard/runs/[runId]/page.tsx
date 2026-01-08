@@ -1,3 +1,4 @@
+import Link from "next/link";
 import StatusBadge from "@/components/status-badge";
 import { apiFetch } from "@/lib/api";
 import { failureReason, formatDuration, formatIsoDate } from "@/lib/formatters";
@@ -78,12 +79,32 @@ const hasManualFallback = (steps: RunStep[]) => {
 export default async function RunDetailsPage({
   params,
 }: {
-  params: { runId: string };
+  params: Promise<{ runId: string }>;
 }) {
-  const { runId } = params;
+  const { runId } = await params;
+  const numericRunId = Number(runId);
+
+  if (!runId || Number.isNaN(numericRunId)) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-semibold">Run details unavailable</h1>
+        <p className="text-sm text-gray-600">
+          The run ID is missing or invalid. Return to the runs list to select a
+          valid run.
+        </p>
+        <Link
+          href="/dashboard/runs"
+          className="inline-flex items-center rounded border px-4 py-2 text-sm font-medium text-gray-700"
+        >
+          Back to Runs
+        </Link>
+      </div>
+    );
+  }
+
   const [run, steps] = await Promise.all([
-    apiFetch<Run>(`/dashboard/runs/${runId}`),
-    apiFetch<RunStep[]>(`/dashboard/runs/${runId}/steps`),
+    apiFetch<Run>(`/dashboard/runs/${numericRunId}`),
+    apiFetch<RunStep[]>(`/dashboard/runs/${numericRunId}/steps`),
   ]);
 
   const failure = failureReason({
