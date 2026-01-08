@@ -1,7 +1,7 @@
 import Link from "next/link";
-import StatusBadge from "@/components/status-badge";
 import { apiFetch } from "@/lib/api";
-import { failureReason, formatDuration, formatIsoDate } from "@/lib/formatters";
+import { formatIsoDate } from "@/lib/formatters";
+import RecentRuns from "./recent-runs";
 
 type Report = {
   id: number;
@@ -17,34 +17,8 @@ type Violation = {
   created_at: string;
 };
 
-type Run = {
-  id: number;
-  raw_id: number;
-  status: string;
-  error?: string | null;
-  error_code?: string | null;
-  report_id?: number | null;
-  processed_id?: number | null;
-  created_at: string;
-  duration_seconds?: number | null;
-};
-
-const runStatusTone = (status: string) => {
-  switch (status) {
-    case "started":
-      return "blue";
-    case "completed":
-      return "green";
-    case "failed":
-      return "red";
-    default:
-      return "gray";
-  }
-};
-
 export default async function DashboardHomePage() {
-  const [runs, reports, violations] = await Promise.all([
-    apiFetch<Run[]>("/dashboard/runs?limit=10"),
+  const [reports, violations] = await Promise.all([
     apiFetch<Report[]>("/dashboard/reports?limit=5"),
     apiFetch<Violation[]>("/dashboard/violations?limit=5"),
   ]);
@@ -74,45 +48,7 @@ export default async function DashboardHomePage() {
               View all
             </Link>
           </div>
-          <div className="space-y-3 text-sm">
-            {runs.length === 0 && (
-              <div className="text-gray-500">No runs yet.</div>
-            )}
-            {runs.map((run) => {
-              const reason = failureReason({
-                error: run.error ?? undefined,
-                errorCode: run.error_code ?? undefined,
-              });
-              return (
-                <div
-                  key={run.id}
-                  className="rounded border border-gray-100 bg-gray-50 p-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <Link
-                      href={`/dashboard/runs/${run.id}`}
-                      className="font-medium text-blue-700"
-                    >
-                      Run #{run.id}
-                    </Link>
-                    <StatusBadge
-                      label={run.status}
-                      tone={runStatusTone(run.status)}
-                    />
-                  </div>
-                  <div className="mt-1 text-xs text-gray-500">
-                    Raw ID {run.raw_id} · {formatIsoDate(run.created_at)} ·{" "}
-                    {formatDuration(run.duration_seconds ?? undefined)}
-                  </div>
-                  {run.status === "failed" && reason && (
-                    <div className="mt-2 text-xs text-red-600">
-                      Failure reason: {reason}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <RecentRuns />
         </section>
 
         <section className="rounded border p-4">
