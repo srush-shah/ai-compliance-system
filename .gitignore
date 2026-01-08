@@ -28,6 +28,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+!apps/frontend/src/lib/
+!apps/frontend/src/lib/**
 
 # Virtual Environments
 venv/
