@@ -19,6 +19,7 @@ export default function DashboardLayout({children}:
                     <Link href="/dashboard" className="block font-medium">Dashboard</Link>
                     <Link href="/dashboard/reports" className="block">Reports</Link>
                     <Link href="/dashboard/violations" className="block">Violations</Link>
+                    <Link href="/dashboard/policy-rules" className="block">Policy Rules</Link>
                     <Link href="/dashboard/runs" className="block">Runs</Link>
                     <Link href="/dashboard/run_workflow" className="block">Run Workflow</Link>
                 </nav>
