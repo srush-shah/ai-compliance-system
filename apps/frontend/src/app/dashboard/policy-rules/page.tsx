@@ -14,6 +14,7 @@ type PolicyRule = {
   severity: string;
   category: string;
   pattern_type: string;
+  pattern?: string | null;
   scope?: unknown;
   remediation?: string | null;
   version: string;
@@ -33,6 +34,7 @@ export default function PolicyRulesPage() {
     severity: "medium",
     category: "general",
     pattern_type: "keyword",
+    pattern: "",
     remediation: "",
   });
 
@@ -73,6 +75,7 @@ export default function PolicyRulesPage() {
         severity: "medium",
         category: "general",
         pattern_type: "keyword",
+        pattern: "",
         remediation: "",
       });
       await loadRules();
@@ -149,6 +152,18 @@ export default function PolicyRulesPage() {
               <option value="semantic">Semantic</option>
             </select>
           </label>
+          <label className="text-sm">
+            <span className="font-medium">Pattern</span>
+            <input
+              type="text"
+              className="mt-1 w-full rounded border px-3 py-2"
+              value={form.pattern}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, pattern: event.target.value }))
+              }
+              placeholder="Keyword, regex, or intent"
+            />
+          </label>
         </div>
         <label className="text-sm block">
           <span className="font-medium">Description</span>
@@ -205,6 +220,9 @@ export default function PolicyRulesPage() {
                   {rule.severity}
                 </span>
               </div>
+              {rule.pattern && (
+                <p className="mt-2 text-xs text-gray-500">Pattern: {rule.pattern}</p>
+              )}
               {rule.description && (
                 <p className="mt-2 text-sm text-gray-600">{rule.description}</p>
               )}

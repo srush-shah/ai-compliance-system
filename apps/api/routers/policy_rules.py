@@ -14,6 +14,7 @@ class PolicyRuleCreate(BaseModel):
     severity: str = Field(default="medium")
     category: str = Field(default="general")
     pattern_type: str = Field(default="keyword")
+    pattern: Optional[str] = None
     scope: Optional[Any] = None
     remediation: Optional[str] = None
     is_active: bool = True
@@ -26,6 +27,7 @@ class PolicyRuleUpdate(BaseModel):
     severity: Optional[str] = None
     category: Optional[str] = None
     pattern_type: Optional[str] = None
+    pattern: Optional[str] = None
     scope: Optional[Any] = None
     remediation: Optional[str] = None
     is_active: Optional[bool] = None
@@ -62,6 +64,7 @@ def create_policy_rule(payload: PolicyRuleCreate) -> Dict[str, Any]:
         severity=payload.severity,
         category=payload.category,
         pattern_type=payload.pattern_type,
+        pattern=payload.pattern,
         scope=payload.scope,
         remediation=payload.remediation,
         is_active=payload.is_active,

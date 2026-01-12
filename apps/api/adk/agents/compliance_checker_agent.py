@@ -7,6 +7,7 @@ Fetches processed data, checks against policy rules, creates violations, and log
 from typing import Dict, List
 
 from adk.tools.tools_registry import get_adk_tools
+from services.rule_engine import evaluate_rules
 
 
 class ComplianceCheckerADKAgent:
@@ -38,26 +39,30 @@ class ComplianceCheckerADKAgent:
 
         violations_created: List[Dict] = []
 
-        # 3. Apply rules (simple substring matching for now)
-        # Extract text content from structured data
-        full_content = processed["structured"].get("full_content", "")
-        # Handle both string and dict content
-        if isinstance(full_content, dict):
-            content_text = str(full_content.get("raw_text", full_content))
-        else:
-            content_text = str(full_content)
+        # 3. Apply rules across normalized sections
+        structured = processed.get("structured", {})
+        sections = structured.get("sections", [])
 
-        for rule in rules:
-            if rule["name"].lower() in content_text.lower():
+        if not sections:
+            fallback_text = str(structured.get("full_content") or structured.get("raw_content") or "")
+            sections = [{"chunk_id": None, "label": "raw", "text": fallback_text}]
 
-                # 4. Create violation
-                violation = self.tools["create_violation"](
-                    processed_id=processed_id,
-                    rule=rule["name"],
-                    severity=rule["severity"],
-                    details={"matched_text": rule["name"]},
-                )
-                violations_created.append(violation)
+        detected = evaluate_rules(rules, sections)
+
+        for match in detected:
+            violation = self.tools["create_violation"](
+                processed_id=processed_id,
+                rule=match.get("rule") or "unknown",
+                severity=match.get("severity") or "medium",
+                details={
+                    "rule_id": match.get("rule_id"),
+                    "evidence": match.get("evidence"),
+                    "location": match.get("location"),
+                    "confidence": match.get("confidence"),
+                    "recommended_fix": match.get("recommended_fix"),
+                },
+            )
+            violations_created.append(violation)
 
         # 5. Log Action
         self.tools["log_agent_action"](

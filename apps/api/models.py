@@ -38,6 +38,7 @@ class PolicyRule(Base):
     severity = Column(String)
     category = Column(String, nullable=False, default="general")
     pattern_type = Column(String, nullable=False, default="keyword")
+    pattern = Column(String, nullable=True)
     scope = Column(JSON, nullable=True)
     remediation = Column(String, nullable=True)
     version = Column(String, nullable=False, default="v1")

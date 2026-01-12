@@ -50,6 +50,24 @@ def ensure_raw_data_columns():
         print("✓ Added raw_data metadata columns.")
 
 
+def ensure_policy_rule_columns():
+    """Ensure policy_rules table has pattern column."""
+    inspector = inspect(engine)
+    columns = [col["name"] for col in inspector.get_columns("policy_rules")]
+    if "pattern" not in columns:
+        print("Adding missing 'pattern' column to 'policy_rules' table...")
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                ALTER TABLE policy_rules
+                ADD COLUMN pattern VARCHAR NULL
+            """
+                )
+            )
+        print("✓ Added 'pattern' column to 'policy_rules' table.")
+
+
 if __name__ == "__main__":
     # Create all tables
     Base.metadata.create_all(bind=engine)
@@ -59,6 +77,7 @@ if __name__ == "__main__":
     try:
         ensure_reports_updated_at_column()
         ensure_raw_data_columns()
+        ensure_policy_rule_columns()
     except Exception as e:
         # If table doesn't exist yet, that's fine - create_all will create it with the column
         if "doesn't exist" not in str(e).lower():
