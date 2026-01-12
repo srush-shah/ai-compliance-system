@@ -7,6 +7,8 @@ from models import (
     ADKRunStep,
     AgentLog,
     PolicyRule,
+    PolicyRuleAudit,
+    PolicyRuleVersion,
     ProcessedData,
     RawData,
     Report,
@@ -79,7 +81,7 @@ def get_policy_rules() -> List[Dict]:
     db: Session = SessionLocal()
 
     try:
-        rules = db.query(PolicyRule).all()
+        rules = db.query(PolicyRule).order_by(PolicyRule.id.asc()).all()
 
         if not rules:
             return [{"error": "no policies found"}]
@@ -90,8 +92,75 @@ def get_policy_rules() -> List[Dict]:
                 "name": r.name,
                 "description": r.description,
                 "severity": r.severity,
+                "category": r.category,
+                "pattern_type": r.pattern_type,
+                "scope": r.scope,
+                "remediation": r.remediation,
+                "version": r.version,
+                "is_active": bool(r.is_active),
+                "created_at": (
+                    r.created_at.isoformat() if r.created_at is not None else None
+                ),
+                "updated_at": (
+                    r.updated_at.isoformat() if r.updated_at is not None else None
+                ),
             }
             for r in rules
+        ]
+    finally:
+        db.close()
+
+
+def get_policy_rule_by_id(rule_id: int) -> Dict:
+    db: Session = SessionLocal()
+    try:
+        rule = db.query(PolicyRule).filter(PolicyRule.id == rule_id).first()
+        if rule is None:
+            return {"error": "not_found"}
+
+        return {
+            "id": rule.id,
+            "name": rule.name,
+            "description": rule.description,
+            "severity": rule.severity,
+            "category": rule.category,
+            "pattern_type": rule.pattern_type,
+            "scope": rule.scope,
+            "remediation": rule.remediation,
+            "version": rule.version,
+            "is_active": bool(rule.is_active),
+            "created_at": (
+                rule.created_at.isoformat() if rule.created_at is not None else None
+            ),
+            "updated_at": (
+                rule.updated_at.isoformat() if rule.updated_at is not None else None
+            ),
+        }
+    finally:
+        db.close()
+
+
+def list_policy_rule_versions(rule_id: int) -> List[Dict]:
+    db: Session = SessionLocal()
+    try:
+        versions = (
+            db.query(PolicyRuleVersion)
+            .filter(PolicyRuleVersion.rule_id == rule_id)
+            .order_by(PolicyRuleVersion.id.asc())
+            .all()
+        )
+
+        return [
+            {
+                "id": v.id,
+                "rule_id": v.rule_id,
+                "version": v.version,
+                "content_snapshot": v.content_snapshot,
+                "created_at": (
+                    v.created_at.isoformat() if v.created_at is not None else None
+                ),
+            }
+            for v in versions
         ]
     finally:
         db.close()
@@ -401,6 +470,161 @@ def create_processed_data(raw_id: int, structured: Any) -> Dict:
         db.refresh(p)
         return {"id": p.id, "raw_id": raw_id}
 
+    finally:
+        db.close()
+
+
+def create_policy_rule(
+    name: str,
+    description: str | None,
+    severity: str,
+    category: str,
+    pattern_type: str,
+    scope: Any | None,
+    remediation: str | None,
+    is_active: bool,
+    actor: str | None = None,
+) -> Dict:
+    db: Session = SessionLocal()
+    try:
+        rule = PolicyRule(
+            name=name,
+            description=description,
+            severity=severity,
+            category=category,
+            pattern_type=pattern_type,
+            scope=scope,
+            remediation=remediation,
+            version="v1",
+            is_active=1 if is_active else 0,
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(rule)
+        db.commit()
+        db.refresh(rule)
+
+        snapshot = {
+            "name": rule.name,
+            "description": rule.description,
+            "severity": rule.severity,
+            "category": rule.category,
+            "pattern_type": rule.pattern_type,
+            "scope": rule.scope,
+            "remediation": rule.remediation,
+            "version": rule.version,
+            "is_active": bool(rule.is_active),
+        }
+
+        version = PolicyRuleVersion(
+            rule_id=rule.id,
+            version=rule.version,
+            content_snapshot=snapshot,
+            created_at=datetime.now(timezone.utc),
+        )
+        audit = PolicyRuleAudit(
+            rule_id=rule.id,
+            action="created",
+            actor=actor,
+            changes=snapshot,
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add_all([version, audit])
+        db.commit()
+
+        return {"id": rule.id, "version": rule.version}
+    finally:
+        db.close()
+
+
+def update_policy_rule(
+    rule_id: int,
+    updates: Dict[str, Any],
+    actor: str | None = None,
+) -> Dict:
+    db: Session = SessionLocal()
+    try:
+        rule = db.query(PolicyRule).filter(PolicyRule.id == rule_id).first()
+        if rule is None:
+            return {"error": "not_found"}
+
+        previous = {
+            "name": rule.name,
+            "description": rule.description,
+            "severity": rule.severity,
+            "category": rule.category,
+            "pattern_type": rule.pattern_type,
+            "scope": rule.scope,
+            "remediation": rule.remediation,
+            "version": rule.version,
+            "is_active": bool(rule.is_active),
+        }
+
+        for key, value in updates.items():
+            if key == "is_active":
+                setattr(rule, key, 1 if value else 0)
+            else:
+                setattr(rule, key, value)
+
+        next_version_number = int(rule.version.lstrip("v") or "1") + 1
+        rule.version = f"v{next_version_number}"
+        rule.updated_at = datetime.now(timezone.utc)
+
+        snapshot = {
+            "name": rule.name,
+            "description": rule.description,
+            "severity": rule.severity,
+            "category": rule.category,
+            "pattern_type": rule.pattern_type,
+            "scope": rule.scope,
+            "remediation": rule.remediation,
+            "version": rule.version,
+            "is_active": bool(rule.is_active),
+        }
+
+        version = PolicyRuleVersion(
+            rule_id=rule.id,
+            version=rule.version,
+            content_snapshot=snapshot,
+            created_at=datetime.now(timezone.utc),
+        )
+        audit = PolicyRuleAudit(
+            rule_id=rule.id,
+            action="updated",
+            actor=actor,
+            changes={"before": previous, "after": snapshot},
+            created_at=datetime.now(timezone.utc),
+        )
+
+        db.add_all([version, audit])
+        db.commit()
+        db.refresh(rule)
+
+        return {"id": rule.id, "version": rule.version}
+    finally:
+        db.close()
+
+
+def deactivate_policy_rule(rule_id: int, actor: str | None = None) -> Dict:
+    db: Session = SessionLocal()
+    try:
+        rule = db.query(PolicyRule).filter(PolicyRule.id == rule_id).first()
+        if rule is None:
+            return {"error": "not_found"}
+
+        rule.is_active = 0
+        rule.updated_at = datetime.now(timezone.utc)
+
+        audit = PolicyRuleAudit(
+            rule_id=rule.id,
+            action="deactivated",
+            actor=actor,
+            changes={"is_active": False},
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(audit)
+        db.commit()
+
+        return {"id": rule.id, "is_active": False}
     finally:
         db.close()
 

@@ -11,6 +11,9 @@ class RawData(Base):
 
     id = Column(Integer, primary_key=True)
     content = Column(JSON, nullable=False)
+    file_name = Column(String, nullable=True)
+    file_type = Column(String, nullable=True)
+    source = Column(String, nullable=True)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -33,6 +36,41 @@ class PolicyRule(Base):
     name = Column(String, nullable=False)
     description = Column(String)
     severity = Column(String)
+    category = Column(String, nullable=False, default="general")
+    pattern_type = Column(String, nullable=False, default="keyword")
+    scope = Column(JSON, nullable=True)
+    remediation = Column(String, nullable=True)
+    version = Column(String, nullable=False, default="v1")
+    is_active = Column(Integer, nullable=False, default=1)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class PolicyRuleVersion(Base):
+    __tablename__ = "policy_rule_versions"
+
+    id = Column(Integer, primary_key=True)
+    rule_id = Column(Integer, ForeignKey("policy_rules.id", ondelete="CASCADE"))
+    version = Column(String, nullable=False)
+    content_snapshot = Column(JSON, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class PolicyRuleAudit(Base):
+    __tablename__ = "policy_rule_audit"
+
+    id = Column(Integer, primary_key=True)
+    rule_id = Column(Integer, ForeignKey("policy_rules.id", ondelete="CASCADE"))
+    action = Column(String, nullable=False)
+    actor = Column(String, nullable=True)
+    changes = Column(JSON, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 
 
 class Violation(Base):
