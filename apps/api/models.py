@@ -11,6 +11,9 @@ class RawData(Base):
 
     id = Column(Integer, primary_key=True)
     content = Column(JSON, nullable=False)
+    file_name = Column(String, nullable=True)
+    file_type = Column(String, nullable=True)
+    source = Column(String, nullable=True)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

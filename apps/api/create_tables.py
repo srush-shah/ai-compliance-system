@@ -30,6 +30,26 @@ def ensure_reports_updated_at_column():
         print("✓ Added 'updated_at' column to 'reports' table.")
 
 
+def ensure_raw_data_columns():
+    """Ensure raw_data table has metadata columns."""
+    inspector = inspect(engine)
+    columns = [col["name"] for col in inspector.get_columns("raw_data")]
+    alterations = []
+
+    if "file_name" not in columns:
+        alterations.append("ADD COLUMN file_name VARCHAR NULL")
+    if "file_type" not in columns:
+        alterations.append("ADD COLUMN file_type VARCHAR NULL")
+    if "source" not in columns:
+        alterations.append("ADD COLUMN source VARCHAR NULL")
+
+    if alterations:
+        print("Adding missing metadata columns to 'raw_data' table...")
+        with engine.begin() as conn:
+            conn.execute(text(f"ALTER TABLE raw_data {', '.join(alterations)}"))
+        print("✓ Added raw_data metadata columns.")
+
+
 if __name__ == "__main__":
     # Create all tables
     Base.metadata.create_all(bind=engine)
@@ -38,6 +58,7 @@ if __name__ == "__main__":
     # Ensure reports table has updated_at column (for existing databases)
     try:
         ensure_reports_updated_at_column()
+        ensure_raw_data_columns()
     except Exception as e:
         # If table doesn't exist yet, that's fine - create_all will create it with the column
         if "doesn't exist" not in str(e).lower():
