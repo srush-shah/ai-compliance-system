@@ -1,4 +1,6 @@
+import csv
 import json
+from io import StringIO
 from typing import cast
 
 from adk.tools.tools_registry import get_adk_tools
@@ -27,13 +29,39 @@ async def upload_file(
     db: Session = Depends(get_db),
 ):
     content = await file.read()
+    file_name = file.filename
+    content_type = file.content_type or ""
+    decoded = content.decode(errors="ignore")
 
-    try:
-        parsed = json.loads(content)
-    except Exception:
-        parsed = {"raw_text": content.decode(errors="ignore")}
+    parsed: dict[str, object] = {
+        "raw_text": decoded,
+        "file_name": file_name,
+        "file_type": "text",
+        "source": "upload",
+    }
 
-    record = RawData(content=parsed)
+    if (file_name and file_name.lower().endswith(".csv")) or "csv" in content_type:
+        try:
+            reader = csv.DictReader(StringIO(decoded))
+            rows = [row for row in reader]
+            parsed["file_type"] = "csv"
+            parsed["csv_rows"] = rows
+        except Exception:
+            parsed["file_type"] = "text"
+    else:
+        try:
+            parsed_json = json.loads(decoded)
+            parsed["file_type"] = "json"
+            parsed["parsed_json"] = parsed_json
+        except Exception:
+            parsed["file_type"] = "text"
+
+    record = RawData(
+        content=parsed,
+        file_name=file_name,
+        file_type=parsed.get("file_type"),
+        source="upload",
+    )
     db.add(record)
     db.commit()
     db.refresh(record)

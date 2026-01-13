@@ -8,6 +8,7 @@ and generates a report entry.
 from typing import Dict
 
 from adk.tools.tools_registry import get_adk_tools
+from services.risk_model import score_risk
 
 
 class RiskAssessorADKAgent:
@@ -23,16 +24,22 @@ class RiskAssessorADKAgent:
             return {"error": "violations fetch failed"}
 
         # 2. Compute risk score
-        # Simple rule: 10 points per violation, capped at 100
-        score = min(len(violations) * 10, 100)
+        risk = score_risk(violations)
+        score = risk["score"]
+        tier = risk["tier"]
 
-        summary = f"Risk Score: {score}. Total Violations: {len(violations)}."
+        summary = (
+            f"Risk Tier: {tier}. Risk Score: {score}. "
+            f"Total Violations: {len(violations)}."
+        )
 
         content = {
             "processed_id": processed_id,
             "violation_count": len(violations),
             "violations": violations,
             "risk_score": score,
+            "risk_tier": tier,
+            "risk_breakdown": risk["breakdown"],
         }
 
         # 4. Create report

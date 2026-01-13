@@ -35,6 +35,7 @@ class ReportWriterADKAgent:
         )
 
         # 4. Build structured content
+        existing_content = report.get("content") if isinstance(report, dict) else None
         content = {
             "report_id": report_id,
             "processed_id": processed_id,
@@ -42,6 +43,8 @@ class ReportWriterADKAgent:
             "violations": violations,
             "generated_by": self.name,
         }
+        if isinstance(existing_content, dict):
+            content = {**existing_content, **content}
 
         # 5. Persist report update
         # Get existing score from report, calculate if not present
