@@ -8,6 +8,7 @@ from routers import (
     dashboard_runs,
     dashboard_violations,
     policy_rules,
+    reports,
     upload,
 )
 
@@ -33,6 +34,7 @@ app.include_router(dashboard_runs.router)
 
 app.include_router(adk_tools_test.router)
 app.include_router(policy_rules.router)
+app.include_router(reports.router)
 
 
 @app.get("/health")
