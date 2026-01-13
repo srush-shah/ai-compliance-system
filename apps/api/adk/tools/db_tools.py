@@ -34,20 +34,56 @@ def _calculate_duration_seconds(
     return (end - start).total_seconds()
 
 
+def _apply_org_workspace_filters(
+    query, model, org_id: int | None, workspace_id: int | None
+):
+    if org_id is not None:
+        query = query.filter(model.org_id == org_id)
+    if workspace_id is not None:
+        query = query.filter(model.workspace_id == workspace_id)
+    return query
+
+
+def _get_org_workspace_for_raw(
+    db: Session, raw_id: int
+) -> Optional[tuple[int, int]]:
+    raw = db.query(RawData).filter(RawData.id == raw_id).first()
+    if not raw:
+        return None
+    return raw.org_id, raw.workspace_id
+
+
+def _get_org_workspace_for_processed(
+    db: Session, processed_id: int
+) -> Optional[tuple[int, int]]:
+    processed = (
+        db.query(ProcessedData).filter(ProcessedData.id == processed_id).first()
+    )
+    if not processed:
+        return None
+    return processed.org_id, processed.workspace_id
+
+
 # =========Read Ops==================
 
 
-def get_raw_data_by_id(raw_id: int) -> Dict:
+def get_raw_data_by_id(
+    raw_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> Dict:
     db: Session = SessionLocal()
 
     try:
-        r = db.query(RawData).filter(RawData.id == raw_id).first()
+        query = db.query(RawData).filter(RawData.id == raw_id)
+        query = _apply_org_workspace_filters(query, RawData, org_id, workspace_id)
+        r = query.first()
 
         if r is None:
             return {"error": "not_found"}
 
         return {
             "id": r.id,
+            "org_id": r.org_id,
+            "workspace_id": r.workspace_id,
             "content": r.content,
             "created_at": (
                 r.created_at.isoformat() if r.created_at is not None else None
@@ -57,17 +93,23 @@ def get_raw_data_by_id(raw_id: int) -> Dict:
         db.close()
 
 
-def get_processed_data_by_id(processed_id: int) -> Dict:
+def get_processed_data_by_id(
+    processed_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> Dict:
     db: Session = SessionLocal()
 
     try:
-        p = db.query(ProcessedData).filter(ProcessedData.id == processed_id).first()
+        query = db.query(ProcessedData).filter(ProcessedData.id == processed_id)
+        query = _apply_org_workspace_filters(query, ProcessedData, org_id, workspace_id)
+        p = query.first()
 
         if p is None:
             return {"error": "not_found"}
 
         return {
             "id": p.id,
+            "org_id": p.org_id,
+            "workspace_id": p.workspace_id,
             "structured": p.structured,
             "created_at": (
                 p.created_at.isoformat() if p.created_at is not None else None
@@ -77,11 +119,15 @@ def get_processed_data_by_id(processed_id: int) -> Dict:
         db.close()
 
 
-def get_policy_rules() -> List[Dict]:
+def get_policy_rules(
+    org_id: int | None = None, workspace_id: int | None = None
+) -> List[Dict]:
     db: Session = SessionLocal()
 
     try:
-        rules = db.query(PolicyRule).order_by(PolicyRule.id.asc()).all()
+        query = db.query(PolicyRule)
+        query = _apply_org_workspace_filters(query, PolicyRule, org_id, workspace_id)
+        rules = query.order_by(PolicyRule.id.asc()).all()
 
         if not rules:
             return [{"error": "no policies found"}]
@@ -112,10 +158,14 @@ def get_policy_rules() -> List[Dict]:
         db.close()
 
 
-def get_policy_rule_by_id(rule_id: int) -> Dict:
+def get_policy_rule_by_id(
+    rule_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> Dict:
     db: Session = SessionLocal()
     try:
-        rule = db.query(PolicyRule).filter(PolicyRule.id == rule_id).first()
+        query = db.query(PolicyRule).filter(PolicyRule.id == rule_id)
+        query = _apply_org_workspace_filters(query, PolicyRule, org_id, workspace_id)
+        rule = query.first()
         if rule is None:
             return {"error": "not_found"}
 
@@ -142,15 +192,22 @@ def get_policy_rule_by_id(rule_id: int) -> Dict:
         db.close()
 
 
-def list_policy_rule_versions(rule_id: int) -> List[Dict]:
+def list_policy_rule_versions(
+    rule_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> List[Dict]:
     db: Session = SessionLocal()
     try:
-        versions = (
-            db.query(PolicyRuleVersion)
-            .filter(PolicyRuleVersion.rule_id == rule_id)
-            .order_by(PolicyRuleVersion.id.asc())
-            .all()
+        query = db.query(PolicyRuleVersion).filter(
+            PolicyRuleVersion.rule_id == rule_id
         )
+        if org_id is not None or workspace_id is not None:
+            query = query.join(
+                PolicyRule, PolicyRuleVersion.rule_id == PolicyRule.id
+            )
+            query = _apply_org_workspace_filters(
+                query, PolicyRule, org_id, workspace_id
+            )
+        versions = query.order_by(PolicyRuleVersion.id.asc()).all()
 
         return [
             {
@@ -168,18 +225,18 @@ def list_policy_rule_versions(rule_id: int) -> List[Dict]:
         db.close()
 
 
-def get_violations_by_processed_id(processed_id: int) -> List[Dict]:
+def get_violations_by_processed_id(
+    processed_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> List[Dict]:
     db: Session = SessionLocal()
 
     try:
-        violations = (
-            db.query(Violation)
-            .filter(
-                cast(text("violations.details ->> 'processed_id'"), Integer)
-                == processed_id
-            )
-            .all()
+        query = db.query(Violation).filter(
+            cast(text("violations.details ->> 'processed_id'"), Integer)
+            == processed_id
         )
+        query = _apply_org_workspace_filters(query, Violation, org_id, workspace_id)
+        violations = query.all()
 
         return [
             {
@@ -197,10 +254,14 @@ def get_violations_by_processed_id(processed_id: int) -> List[Dict]:
         db.close()
 
 
-def get_report_by_id(report_id: int) -> Dict:
+def get_report_by_id(
+    report_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> Dict:
     db: Session = SessionLocal()
     try:
-        r = db.query(Report).filter(Report.id == report_id).first()
+        query = db.query(Report).filter(Report.id == report_id)
+        query = _apply_org_workspace_filters(query, Report, org_id, workspace_id)
+        r = query.first()
         if not r:
             return {"error": "not_found"}
 
@@ -218,14 +279,16 @@ def get_report_by_id(report_id: int) -> Dict:
         db.close()
 
 
-def get_active_adk_run_by_raw_id(raw_id: int) -> Dict:
+def get_active_adk_run_by_raw_id(
+    raw_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> Dict:
     db: Session = SessionLocal()
     try:
-        run = (
-            db.query(ADKRun)
-            .filter(ADKRun.raw_id == raw_id, ADKRun.status == "started")
-            .first()
+        query = db.query(ADKRun).filter(
+            ADKRun.raw_id == raw_id, ADKRun.status == "started"
         )
+        query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
+        run = query.first()
 
         if not run:
             return {"active": False}
@@ -235,16 +298,17 @@ def get_active_adk_run_by_raw_id(raw_id: int) -> Dict:
         db.close()
 
 
-def get_latest_failed_adk_run_by_raw_id(raw_id: int) -> Dict:
+def get_latest_failed_adk_run_by_raw_id(
+    raw_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> Dict:
     db: Session = SessionLocal()
 
     try:
-        run = (
-            db.query(ADKRun)
-            .filter(ADKRun.raw_id == raw_id, ADKRun.status == "failed")
-            .order_by(ADKRun.created_at.desc())
-            .first()
+        query = db.query(ADKRun).filter(
+            ADKRun.raw_id == raw_id, ADKRun.status == "failed"
         )
+        query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
+        run = query.order_by(ADKRun.created_at.desc()).first()
 
         if run is None:
             return {"error": "not_found"}
@@ -272,16 +336,15 @@ def get_latest_failed_adk_run_by_raw_id(raw_id: int) -> Dict:
         db.close()
 
 
-def get_latest_adk_run_by_raw_id(raw_id: int) -> Dict:
+def get_latest_adk_run_by_raw_id(
+    raw_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> Dict:
     db: Session = SessionLocal()
 
     try:
-        run = (
-            db.query(ADKRun)
-            .filter(ADKRun.raw_id == raw_id)
-            .order_by(ADKRun.created_at.desc())
-            .first()
-        )
+        query = db.query(ADKRun).filter(ADKRun.raw_id == raw_id)
+        query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
+        run = query.order_by(ADKRun.created_at.desc()).first()
 
         if run is None:
             return {"error": "not_found"}
@@ -310,11 +373,15 @@ def get_latest_adk_run_by_raw_id(raw_id: int) -> Dict:
         db.close()
 
 
-def get_adk_run_by_id(run_id: int) -> Dict:
+def get_adk_run_by_id(
+    run_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> Dict:
     db: Session = SessionLocal()
 
     try:
-        run = db.query(ADKRun).filter(ADKRun.id == run_id).first()
+        query = db.query(ADKRun).filter(ADKRun.id == run_id)
+        query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
+        run = query.first()
 
         if run is None:
             return {"error": "not_found"}
@@ -344,11 +411,15 @@ def get_adk_run_by_id(run_id: int) -> Dict:
         db.close()
 
 
-def list_adk_runs(limit: int = 20) -> List[Dict]:
+def list_adk_runs(
+    limit: int = 20, org_id: int | None = None, workspace_id: int | None = None
+) -> List[Dict]:
     db: Session = SessionLocal()
 
     try:
-        runs = db.query(ADKRun).order_by(ADKRun.created_at.desc()).limit(limit).all()
+        query = db.query(ADKRun)
+        query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
+        runs = query.order_by(ADKRun.created_at.desc()).limit(limit).all()
 
         return [
             {
@@ -377,16 +448,15 @@ def list_adk_runs(limit: int = 20) -> List[Dict]:
         db.close()
 
 
-def list_adk_runs_by_raw_id(raw_id: int) -> List[Dict]:
+def list_adk_runs_by_raw_id(
+    raw_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> List[Dict]:
     db: Session = SessionLocal()
 
     try:
-        runs = (
-            db.query(ADKRun)
-            .filter(ADKRun.raw_id == raw_id)
-            .order_by(ADKRun.created_at.desc())
-            .all()
-        )
+        query = db.query(ADKRun).filter(ADKRun.raw_id == raw_id)
+        query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
+        runs = query.order_by(ADKRun.created_at.desc()).all()
 
         return [
             {
@@ -413,16 +483,17 @@ def list_adk_runs_by_raw_id(raw_id: int) -> List[Dict]:
         db.close()
 
 
-def get_adk_run_steps(run_id: int) -> List[Dict]:
+def get_adk_run_steps(
+    run_id: int, org_id: int | None = None, workspace_id: int | None = None
+) -> List[Dict]:
     db: Session = SessionLocal()
 
     try:
-        steps = (
-            db.query(ADKRunStep)
-            .filter(ADKRunStep.adk_run_id == run_id)
-            .order_by(ADKRunStep.id.asc())
-            .all()
-        )
+        query = db.query(ADKRunStep).filter(ADKRunStep.adk_run_id == run_id)
+        if org_id is not None or workspace_id is not None:
+            query = query.join(ADKRun, ADKRun.id == ADKRunStep.adk_run_id)
+            query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
+        steps = query.order_by(ADKRunStep.id.asc()).all()
 
         return [
             {
@@ -452,10 +523,21 @@ def get_adk_run_steps(run_id: int) -> List[Dict]:
 # ============Write Ops==============
 
 
-def create_processed_data(raw_id: int, structured: Any) -> Dict:
+def create_processed_data(
+    raw_id: int,
+    structured: Any,
+    org_id: int | None = None,
+    workspace_id: int | None = None,
+) -> Dict:
     db: Session = SessionLocal()
 
     try:
+        if org_id is None or workspace_id is None:
+            org_workspace = _get_org_workspace_for_raw(db, raw_id)
+            if org_workspace is None:
+                return {"error": "raw_data not found"}
+            org_id, workspace_id = org_workspace
+
         # Ensure raw_id is included in structured JSON
         if isinstance(structured, dict):
             # Always include raw_id, overwriting if it exists to ensure consistency
@@ -465,7 +547,11 @@ def create_processed_data(raw_id: int, structured: Any) -> Dict:
             # If structured is not a dict, wrap it
             structured = {"raw_id": raw_id, "structured": structured}
 
-        p = ProcessedData(structured=structured)
+        p = ProcessedData(
+            org_id=org_id,
+            workspace_id=workspace_id,
+            structured=structured,
+        )
 
         db.add(p)
         db.commit()
@@ -486,11 +572,15 @@ def create_policy_rule(
     scope: Any | None,
     remediation: str | None,
     is_active: bool,
+    org_id: int,
+    workspace_id: int,
     actor: str | None = None,
 ) -> Dict:
     db: Session = SessionLocal()
     try:
         rule = PolicyRule(
+            org_id=org_id,
+            workspace_id=workspace_id,
             name=name,
             description=description,
             severity=severity,
@@ -544,11 +634,15 @@ def create_policy_rule(
 def update_policy_rule(
     rule_id: int,
     updates: Dict[str, Any],
+    org_id: int | None = None,
+    workspace_id: int | None = None,
     actor: str | None = None,
 ) -> Dict:
     db: Session = SessionLocal()
     try:
-        rule = db.query(PolicyRule).filter(PolicyRule.id == rule_id).first()
+        query = db.query(PolicyRule).filter(PolicyRule.id == rule_id)
+        query = _apply_org_workspace_filters(query, PolicyRule, org_id, workspace_id)
+        rule = query.first()
         if rule is None:
             return {"error": "not_found"}
 
@@ -611,10 +705,17 @@ def update_policy_rule(
         db.close()
 
 
-def deactivate_policy_rule(rule_id: int, actor: str | None = None) -> Dict:
+def deactivate_policy_rule(
+    rule_id: int,
+    actor: str | None = None,
+    org_id: int | None = None,
+    workspace_id: int | None = None,
+) -> Dict:
     db: Session = SessionLocal()
     try:
-        rule = db.query(PolicyRule).filter(PolicyRule.id == rule_id).first()
+        query = db.query(PolicyRule).filter(PolicyRule.id == rule_id)
+        query = _apply_org_workspace_filters(query, PolicyRule, org_id, workspace_id)
+        rule = query.first()
         if rule is None:
             return {"error": "not_found"}
 
@@ -636,12 +737,27 @@ def deactivate_policy_rule(rule_id: int, actor: str | None = None) -> Dict:
         db.close()
 
 
-def create_violation(processed_id: int, rule: str, severity: str, details: Any) -> Dict:
+def create_violation(
+    processed_id: int,
+    rule: str,
+    severity: str,
+    details: Any,
+    org_id: int | None = None,
+    workspace_id: int | None = None,
+) -> Dict:
 
     db: Session = SessionLocal()
 
     try:
+        if org_id is None or workspace_id is None:
+            org_workspace = _get_org_workspace_for_processed(db, processed_id)
+            if org_workspace is None:
+                return {"error": "processed_data not found"}
+            org_id, workspace_id = org_workspace
+
         v = Violation(
+            org_id=org_id,
+            workspace_id=workspace_id,
             rule=rule,
             severity=severity,
             details={"processed_id": processed_id, **details},
@@ -655,11 +771,26 @@ def create_violation(processed_id: int, rule: str, severity: str, details: Any) 
         db.close()
 
 
-def create_report(processed_id: int, score: int, summary: str, content: Any) -> Dict:
+def create_report(
+    processed_id: int,
+    score: int,
+    summary: str,
+    content: Any,
+    org_id: int | None = None,
+    workspace_id: int | None = None,
+) -> Dict:
     db: Session = SessionLocal()
 
     try:
+        if org_id is None or workspace_id is None:
+            org_workspace = _get_org_workspace_for_processed(db, processed_id)
+            if org_workspace is None:
+                return {"error": "processed_data not found"}
+            org_id, workspace_id = org_workspace
+
         report = Report(
+            org_id=org_id,
+            workspace_id=workspace_id,
             score=score,
             summary=summary,
             content=content,
@@ -717,12 +848,27 @@ def log_agent_action(agent_name: str, action: str, details: Any) -> Dict:
         db.close()
 
 
-def create_adk_run(raw_id: int, status: str) -> Dict:
+def create_adk_run(
+    raw_id: int,
+    status: str,
+    org_id: int | None = None,
+    workspace_id: int | None = None,
+) -> Dict:
     db: Session = SessionLocal()
 
     try:
+        if org_id is None or workspace_id is None:
+            org_workspace = _get_org_workspace_for_raw(db, raw_id)
+            if org_workspace is None:
+                return {"error": "raw_data not found"}
+            org_id, workspace_id = org_workspace
+
         run = ADKRun(
-            raw_id=raw_id, status=status, created_at=datetime.now(timezone.utc)
+            raw_id=raw_id,
+            status=status,
+            org_id=org_id,
+            workspace_id=workspace_id,
+            created_at=datetime.now(timezone.utc),
         )
         db.add(run)
         db.commit()

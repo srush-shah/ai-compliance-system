@@ -1,5 +1,6 @@
 from adk.tools.tools_registry import get_adk_tools
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
+from security import AuthContext, get_auth_context
 from services.compliance_runner import run_compliance_workflow
 
 router = APIRouter(prefix="/compliance", tags=["compliance"])
@@ -7,8 +8,20 @@ tools = get_adk_tools()
 
 
 @router.post("/run/{raw_id}")
-def run_compliance(raw_id: int, background_tasks: BackgroundTasks):
-    active = tools["get_active_adk_run_by_raw_id"](raw_id)
+def run_compliance(
+    raw_id: int,
+    background_tasks: BackgroundTasks,
+    auth: AuthContext = Depends(get_auth_context),
+):
+    raw = tools["get_raw_data_by_id"](
+        raw_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
+    if "error" in raw:
+        raise HTTPException(status_code=404, detail="Raw data not found")
+
+    active = tools["get_active_adk_run_by_raw_id"](
+        raw_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
 
     if active.get("active"):
         return {"status": "already_running", "run_id": active["run_id"]}
@@ -21,8 +34,20 @@ def run_compliance(raw_id: int, background_tasks: BackgroundTasks):
 
 
 @router.post("/retry/{raw_id}")
-def retry_compliance(raw_id: int, background_tasks: BackgroundTasks):
-    latest = tools["get_latest_adk_run_by_raw_id"](raw_id)
+def retry_compliance(
+    raw_id: int,
+    background_tasks: BackgroundTasks,
+    auth: AuthContext = Depends(get_auth_context),
+):
+    raw = tools["get_raw_data_by_id"](
+        raw_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
+    if "error" in raw:
+        raise HTTPException(status_code=404, detail="Raw data not found")
+
+    latest = tools["get_latest_adk_run_by_raw_id"](
+        raw_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
 
     if "id" not in latest and "error" in latest:
         raise HTTPException(status_code=404, detail="No previous run found")
@@ -58,13 +83,17 @@ def retry_compliance(raw_id: int, background_tasks: BackgroundTasks):
 
 
 @router.get("/runs")
-def list_runs(limit: int = 20):
-    return tools["list_adk_runs"](limit=limit)
+def list_runs(limit: int = 20, auth: AuthContext = Depends(get_auth_context)):
+    return tools["list_adk_runs"](
+        limit=limit, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
 
 
 @router.get("/runs/{run_id}")
-def get_run(run_id: int):
-    result = tools["get_adk_run_by_id"](run_id)
+def get_run(run_id: int, auth: AuthContext = Depends(get_auth_context)):
+    result = tools["get_adk_run_by_id"](
+        run_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
 
     if "id" not in result and "error" in result:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -73,10 +102,14 @@ def get_run(run_id: int):
 
 
 @router.get("/runs/raw/{raw_id}")
-def get_runs_for_raw(raw_id: int):
-    return tools["list_adk_runs_by_raw_id"](raw_id)
+def get_runs_for_raw(raw_id: int, auth: AuthContext = Depends(get_auth_context)):
+    return tools["list_adk_runs_by_raw_id"](
+        raw_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
 
 
 @router.get("/runs/{run_id}/steps")
-def get_runs_steps(run_id: int):
-    return tools["get_adk_run_steps"](run_id)
+def get_runs_steps(run_id: int, auth: AuthContext = Depends(get_auth_context)):
+    return tools["get_adk_run_steps"](
+        run_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )

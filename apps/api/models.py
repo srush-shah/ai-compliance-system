@@ -6,10 +6,42 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 
+class Org(Base):
+    __tablename__ = "orgs"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+
+    id = Column(Integer, primary_key=True)
+    org_id = Column(
+        Integer, ForeignKey("orgs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name = Column(String, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+
 class RawData(Base):
     __tablename__ = "raw_data"
 
     id = Column(Integer, primary_key=True)
+    org_id = Column(
+        Integer, ForeignKey("orgs.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     content = Column(JSON, nullable=False)
     file_name = Column(String, nullable=True)
     file_type = Column(String, nullable=True)
@@ -23,6 +55,15 @@ class ProcessedData(Base):
     __tablename__ = "processed_data"
 
     id = Column(Integer, primary_key=True)
+    org_id = Column(
+        Integer, ForeignKey("orgs.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     structured = Column(JSON, nullable=False)
     created_at = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -33,6 +74,15 @@ class PolicyRule(Base):
     __tablename__ = "policy_rules"
 
     id = Column(Integer, primary_key=True)
+    org_id = Column(
+        Integer, ForeignKey("orgs.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     name = Column(String, nullable=False)
     description = Column(String)
     severity = Column(String)
@@ -78,6 +128,15 @@ class Violation(Base):
     __tablename__ = "violations"
 
     id = Column(Integer, primary_key=True)
+    org_id = Column(
+        Integer, ForeignKey("orgs.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     rule = Column(String, nullable=False)
     severity = Column(String, nullable=False)
     details = Column(JSON)
@@ -90,6 +149,15 @@ class Report(Base):
     __tablename__ = "reports"
 
     id = Column(Integer, primary_key=True)
+    org_id = Column(
+        Integer, ForeignKey("orgs.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
     summary = Column(String)
     score = Column(Float)
     content = Column(JSON)
@@ -120,6 +188,15 @@ class ADKRun(Base):
     raw_id = Column(Integer, nullable=False)
     processed_id = Column(Integer, nullable=True)
     report_id = Column(Integer, nullable=True)
+    org_id = Column(
+        Integer, ForeignKey("orgs.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
 
     status = Column(String, nullable=False)  # started | completed | failed
     error = Column(String, nullable=True)

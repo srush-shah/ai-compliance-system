@@ -1,8 +1,10 @@
 """Seed realistic policy rules with structured fields."""
 
-from db import SessionLocal
-from models import PolicyRule, PolicyRuleAudit, PolicyRuleVersion
+import os
 from datetime import datetime, timezone
+
+from db import SessionLocal
+from models import Org, PolicyRule, PolicyRuleAudit, PolicyRuleVersion, Workspace
 
 SEED_RULES = [
     {
@@ -61,6 +63,37 @@ SEED_RULES = [
 def main() -> None:
     db = SessionLocal()
     try:
+        default_org_id = os.getenv("DEFAULT_ORG_ID")
+        default_workspace_id = os.getenv("DEFAULT_WORKSPACE_ID")
+        org_id = int(default_org_id) if default_org_id else None
+        workspace_id = int(default_workspace_id) if default_workspace_id else None
+
+        if org_id is None or workspace_id is None:
+            org = db.query(Org).order_by(Org.id.asc()).first()
+            if org is None:
+                org = Org(name="Default Org", created_at=datetime.now(timezone.utc))
+                db.add(org)
+                db.commit()
+                db.refresh(org)
+            workspace = (
+                db.query(Workspace)
+                .filter(Workspace.org_id == org.id)
+                .order_by(Workspace.id.asc())
+                .first()
+            )
+            if workspace is None:
+                workspace = Workspace(
+                    org_id=org.id,
+                    name="Default Workspace",
+                    created_at=datetime.now(timezone.utc),
+                )
+                db.add(workspace)
+                db.commit()
+                db.refresh(workspace)
+
+            org_id = org.id
+            workspace_id = workspace.id
+
         for rule_data in SEED_RULES:
             existing = (
                 db.query(PolicyRule)
@@ -71,6 +104,8 @@ def main() -> None:
                 continue
 
             rule = PolicyRule(
+                org_id=org_id,
+                workspace_id=workspace_id,
                 name=rule_data["name"],
                 description=rule_data["description"],
                 severity=rule_data["severity"],

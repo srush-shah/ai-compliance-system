@@ -48,7 +48,7 @@ Run the pipeline using tools ONLY.
    Then call create_processed_data(raw_id, structured=structured_data)
    Save processed_id from the returned result.
 
-3) get_policy_rules()
+3) get_policy_rules(org_id=raw_data.org_id, workspace_id=raw_data.workspace_id)
 
 4) match_policy_rules(full_content, rules) -> list of matched rules (name, severity)
 

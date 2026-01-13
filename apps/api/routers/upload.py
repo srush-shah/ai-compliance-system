@@ -7,6 +7,7 @@ from adk.tools.tools_registry import get_adk_tools
 from db import SessionLocal
 from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile
 from models import RawData
+from security import AuthContext, get_auth_context
 from services.compliance_runner import run_compliance_workflow
 from sqlalchemy.orm import Session
 
@@ -27,6 +28,7 @@ async def upload_file(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_auth_context),
 ):
     content = await file.read()
     file_name = file.filename
@@ -57,6 +59,8 @@ async def upload_file(
             parsed["file_type"] = "text"
 
     record = RawData(
+        org_id=auth.org_id,
+        workspace_id=auth.workspace_id,
         content=parsed,
         file_name=file_name,
         file_type=parsed.get("file_type"),
