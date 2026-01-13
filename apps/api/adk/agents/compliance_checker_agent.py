@@ -31,8 +31,13 @@ class ComplianceCheckerADKAgent:
         if "error" in processed:
             return {"error": "processed_data not found", "processed_id": processed_id}
 
+        org_id = processed.get("org_id")
+        workspace_id = processed.get("workspace_id")
+
         # 2. Fetch policy rules
-        rules = self.tools["get_policy_rules"]()
+        rules = self.tools["get_policy_rules"](
+            org_id=org_id, workspace_id=workspace_id
+        )
 
         if not rules or "error" in rules:
             return {"error": "policy_rules not found"}

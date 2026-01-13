@@ -11,6 +11,7 @@ from routers import (
     reports,
     upload,
 )
+from security import router as auth_router
 
 load_dotenv()
 
@@ -35,6 +36,7 @@ app.include_router(dashboard_runs.router)
 app.include_router(adk_tools_test.router)
 app.include_router(policy_rules.router)
 app.include_router(reports.router)
+app.include_router(auth_router)
 
 
 @app.get("/health")

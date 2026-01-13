@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Optional
 
 from adk.tools.tools_registry import get_adk_tools
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from security import AuthContext, get_auth_context
 
 router = APIRouter(prefix="/policy-rules", tags=["policy-rules"])
 tools = get_adk_tools()
@@ -35,29 +36,43 @@ class PolicyRuleUpdate(BaseModel):
 
 
 @router.get("")
-def list_policy_rules() -> List[Dict[str, Any]]:
-    rules = tools["get_policy_rules"]()
+def list_policy_rules(
+    auth: AuthContext = Depends(get_auth_context),
+) -> List[Dict[str, Any]]:
+    rules = tools["get_policy_rules"](
+        org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
     if rules and isinstance(rules, list) and rules[0].get("error") == "no policies found":
         return []
     return rules
 
 
 @router.get("/{rule_id}")
-def get_policy_rule(rule_id: int) -> Dict[str, Any]:
-    rule = tools["get_policy_rule_by_id"](rule_id)
+def get_policy_rule(
+    rule_id: int, auth: AuthContext = Depends(get_auth_context)
+) -> Dict[str, Any]:
+    rule = tools["get_policy_rule_by_id"](
+        rule_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
     if "error" in rule:
         raise HTTPException(status_code=404, detail="Rule not found")
     return rule
 
 
 @router.get("/{rule_id}/versions")
-def get_policy_rule_versions(rule_id: int) -> List[Dict[str, Any]]:
-    versions = tools["list_policy_rule_versions"](rule_id)
+def get_policy_rule_versions(
+    rule_id: int, auth: AuthContext = Depends(get_auth_context)
+) -> List[Dict[str, Any]]:
+    versions = tools["list_policy_rule_versions"](
+        rule_id, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
     return versions
 
 
 @router.post("")
-def create_policy_rule(payload: PolicyRuleCreate) -> Dict[str, Any]:
+def create_policy_rule(
+    payload: PolicyRuleCreate, auth: AuthContext = Depends(get_auth_context)
+) -> Dict[str, Any]:
     result = tools["create_policy_rule"](
         name=payload.name,
         description=payload.description,
@@ -68,28 +83,46 @@ def create_policy_rule(payload: PolicyRuleCreate) -> Dict[str, Any]:
         scope=payload.scope,
         remediation=payload.remediation,
         is_active=payload.is_active,
+        org_id=auth.org_id,
+        workspace_id=auth.workspace_id,
         actor=payload.actor,
     )
     return result
 
 
 @router.put("/{rule_id}")
-def update_policy_rule(rule_id: int, payload: PolicyRuleUpdate) -> Dict[str, Any]:
+def update_policy_rule(
+    rule_id: int,
+    payload: PolicyRuleUpdate,
+    auth: AuthContext = Depends(get_auth_context),
+) -> Dict[str, Any]:
     updates = payload.model_dump(exclude_unset=True)
     actor = updates.pop("actor", None)
 
     if not updates:
         raise HTTPException(status_code=400, detail="No updates provided")
 
-    result = tools["update_policy_rule"](rule_id=rule_id, updates=updates, actor=actor)
+    result = tools["update_policy_rule"](
+        rule_id=rule_id,
+        updates=updates,
+        actor=actor,
+        org_id=auth.org_id,
+        workspace_id=auth.workspace_id,
+    )
     if "error" in result:
         raise HTTPException(status_code=404, detail="Rule not found")
     return result
 
 
 @router.delete("/{rule_id}")
-def deactivate_policy_rule(rule_id: int, actor: Optional[str] = None) -> Dict[str, Any]:
-    result = tools["deactivate_policy_rule"](rule_id, actor)
+def deactivate_policy_rule(
+    rule_id: int,
+    actor: Optional[str] = None,
+    auth: AuthContext = Depends(get_auth_context),
+) -> Dict[str, Any]:
+    result = tools["deactivate_policy_rule"](
+        rule_id, actor, org_id=auth.org_id, workspace_id=auth.workspace_id
+    )
     if "error" in result:
         raise HTTPException(status_code=404, detail="Rule not found")
     return result

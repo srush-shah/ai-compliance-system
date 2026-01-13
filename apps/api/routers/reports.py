@@ -3,9 +3,10 @@ import io
 import json
 
 from db import SessionLocal
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from models import Report
+from security import AuthContext, get_auth_context
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -19,10 +20,18 @@ def _stringify_details(details: object) -> str:
 
 
 @router.get("/{report_id}.json")
-def get_report_json(report_id: int):
+def get_report_json(report_id: int, auth: AuthContext = Depends(get_auth_context)):
     db = SessionLocal()
     try:
-        report = db.query(Report).filter(Report.id == report_id).first()
+        report = (
+            db.query(Report)
+            .filter(
+                Report.id == report_id,
+                Report.org_id == auth.org_id,
+                Report.workspace_id == auth.workspace_id,
+            )
+            .first()
+        )
         if report is None:
             raise HTTPException(status_code=404, detail="report not found")
 
@@ -42,10 +51,20 @@ def get_report_json(report_id: int):
 
 
 @router.get("/{report_id}/violations.csv")
-def export_report_violations_csv(report_id: int):
+def export_report_violations_csv(
+    report_id: int, auth: AuthContext = Depends(get_auth_context)
+):
     db = SessionLocal()
     try:
-        report = db.query(Report).filter(Report.id == report_id).first()
+        report = (
+            db.query(Report)
+            .filter(
+                Report.id == report_id,
+                Report.org_id == auth.org_id,
+                Report.workspace_id == auth.workspace_id,
+            )
+            .first()
+        )
         if report is None:
             raise HTTPException(status_code=404, detail="report not found")
 
@@ -79,10 +98,18 @@ def export_report_violations_csv(report_id: int):
 
 
 @router.get("/{report_id}.pdf")
-def export_report_pdf(report_id: int):
+def export_report_pdf(report_id: int, auth: AuthContext = Depends(get_auth_context)):
     db = SessionLocal()
     try:
-        report = db.query(Report).filter(Report.id == report_id).first()
+        report = (
+            db.query(Report)
+            .filter(
+                Report.id == report_id,
+                Report.org_id == auth.org_id,
+                Report.workspace_id == auth.workspace_id,
+            )
+            .first()
+        )
         if report is None:
             raise HTTPException(status_code=404, detail="report not found")
     finally:
