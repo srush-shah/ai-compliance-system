@@ -138,10 +138,12 @@ class Violation(Base):
         index=True,
     )
     rule = Column(String, nullable=False)
-    severity = Column(String, nullable=False)
+    severity = Column(String, nullable=False, index=True)
     details = Column(JSON)
     created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
     )
 
 
@@ -162,7 +164,9 @@ class Report(Base):
     score = Column(Float)
     content = Column(JSON)
     created_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
     )
     # Optional timestamp for later updates via `update_report`
     updated_at = Column(DateTime(timezone=True), nullable=True)

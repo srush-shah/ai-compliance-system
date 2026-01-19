@@ -58,7 +58,7 @@ export default function UploadPage() {
         </Link>
       </div>
       <div className="mx-auto max-w-lg rounded border bg-white p-6 shadow-sm">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h1 className="text-2xl font-semibold">
             Upload file for compliance review
           </h1>
@@ -66,6 +66,20 @@ export default function UploadPage() {
             Accepted formats: JSON or plain text. The workflow starts
             automatically after upload.
           </p>
+          <div className="flex flex-wrap gap-2">
+            {["JSON", "TXT", "CSV"].map((type) => (
+              <span
+                key={type}
+                className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600"
+              >
+                {type}
+              </span>
+            ))}
+          </div>
+          <div className="rounded border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-700">
+            Tip: Use a structured export for faster policy parsing and clearer
+            violation context.
+          </div>
         </div>
 
         <form onSubmit={handleUpload} className="mt-6 space-y-4">
@@ -114,6 +128,43 @@ export default function UploadPage() {
               Go to Dashboard
             </Link>
           </div>
+
+          <div className="rounded border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-600">
+            <div className="font-semibold text-gray-700">Progress details</div>
+            <ul className="mt-2 space-y-1">
+              <li className="flex items-center justify-between">
+                <span>File ingestion</span>
+                <span className="font-medium">
+                  {isUploading ? "In progress" : "Pending"}
+                </span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span>Policy scan</span>
+                <span className="font-medium">
+                  {isUploading ? "Queued" : "Pending"}
+                </span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span>Report assembly</span>
+                <span className="font-medium">
+                  {isUploading ? "Queued" : "Pending"}
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          {isUploading && (
+            <div className="rounded border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-700">
+              <div className="font-semibold">Demo loader</div>
+              <p className="mt-1">
+                We are streaming status updates. Average processing time is 1-2
+                minutes for standard exports.
+              </p>
+              <div className="mt-3 h-2 w-full rounded-full bg-blue-100">
+                <div className="h-2 w-2/3 animate-pulse rounded-full bg-blue-500" />
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>

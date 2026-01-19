@@ -99,6 +99,25 @@ def ensure_org_workspace_tables():
         )
 
 
+def ensure_dashboard_indexes():
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_violations_severity ON violations (severity)"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_violations_created_at ON violations (created_at)"
+            )
+        )
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_reports_created_at ON reports (created_at)"
+            )
+        )
+
+
 def ensure_multi_tenant_columns():
     """Ensure org/workspace columns, indexes, and constraints exist."""
     inspector = inspect(engine)
@@ -211,6 +230,7 @@ if __name__ == "__main__":
         ensure_raw_data_columns()
         ensure_policy_rule_columns()
         ensure_org_workspace_tables()
+        ensure_dashboard_indexes()
         ensure_multi_tenant_columns()
     except Exception as e:
         # If table doesn't exist yet, that's fine - create_all will create it with the column
