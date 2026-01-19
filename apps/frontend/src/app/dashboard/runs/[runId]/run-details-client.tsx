@@ -102,6 +102,21 @@ const upsertStep = (current: RunStep[], update: RunStep): RunStep[] => {
   return [...current, update].sort((a, b) => a.id - b.id);
 };
 
+const resolveStepDuration = (step: RunStep) => {
+  if (step.duration_seconds !== null && step.duration_seconds !== undefined) {
+    return formatDuration(step.duration_seconds);
+  }
+  if (step.created_at && step.finished_at) {
+    const start = Date.parse(step.created_at);
+    const end = Date.parse(step.finished_at);
+    if (!Number.isNaN(start) && !Number.isNaN(end)) {
+      const seconds = Math.max(0, Math.round((end - start) / 1000));
+      return formatDuration(seconds);
+    }
+  }
+  return "In progress";
+};
+
 export default function RunDetailsClient({ runId }: { runId: number }) {
   const [run, setRun] = useState<Run | null>(null);
   const [steps, setSteps] = useState<RunStep[]>([]);
@@ -271,11 +286,15 @@ export default function RunDetailsClient({ runId }: { runId: number }) {
             <div className="font-medium">{failure ?? "None"}</div>
           </div>
         </div>
-        {fallbackUsed && (
-          <div className="inline-flex items-center rounded-full border border-yellow-200 bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
-            Fallback used: Manual agents
-          </div>
-        )}
+        <div
+          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+            fallbackUsed
+              ? "border-yellow-200 bg-yellow-100 text-yellow-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}
+        >
+          Fallback status: {fallbackUsed ? "Manual fallback used" : "No fallback"}
+        </div>
       </section>
 
       <section className="rounded border p-4">
@@ -301,7 +320,7 @@ export default function RunDetailsClient({ runId }: { runId: number }) {
                 <div className="mt-1 text-xs text-gray-500">
                   Created: {formatIsoDate(step.created_at)} · Finished:{" "}
                   {formatIsoDate(step.finished_at)} · Duration:{" "}
-                  {formatDuration(step.duration_seconds ?? undefined)}
+                  {resolveStepDuration(step)}
                 </div>
                 {step.status === "failed" && stepFailure && (
                   <div className="mt-2 text-xs text-red-600">
