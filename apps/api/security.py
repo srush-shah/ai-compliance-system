@@ -95,6 +95,10 @@ def get_auth_context(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ) -> AuthContext:
     token = credentials.credentials
+    return get_auth_context_for_token(token)
+
+
+def get_auth_context_for_token(token: str) -> AuthContext:
     api_token = os.getenv("API_AUTH_TOKEN") or os.getenv("API_KEY")
 
     if api_token and token == api_token:
