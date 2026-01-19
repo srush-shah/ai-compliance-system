@@ -16,6 +16,7 @@ from models import (
 )
 from sqlalchemy import Integer, cast, text
 from sqlalchemy.orm import Session
+from services.run_updates import run_update_manager
 
 
 def _calculate_duration_seconds(
@@ -51,6 +52,56 @@ def _get_org_workspace_for_raw(
     if not raw:
         return None
     return raw.org_id, raw.workspace_id
+
+
+def _serialize_run_step(step: ADKRunStep) -> Dict:
+    return {
+        "id": step.id,
+        "step": step.step,
+        "status": step.status,
+        "data": step.data,
+        "error": step.error,
+        "error_code": step.error_code,
+        "created_at": (
+            step.created_at.isoformat() if step.created_at is not None else None
+        ),
+        "finished_at": (
+            step.finished_at.isoformat() if step.finished_at is not None else None
+        ),
+        "duration_seconds": _calculate_duration_seconds(
+            step.created_at if isinstance(step.created_at, datetime) else None,
+            step.finished_at if isinstance(step.finished_at, datetime) else None,
+        ),
+    }
+
+
+def _serialize_run(run: ADKRun) -> Dict:
+    return {
+        "id": run.id,
+        "raw_id": run.raw_id,
+        "processed_id": run.processed_id,
+        "report_id": run.report_id,
+        "status": run.status,
+        "error": run.error,
+        "error_code": run.error_code,
+        "created_at": run.created_at.isoformat(),
+        "updated_at": (
+            run.updated_at.isoformat() if run.updated_at is not None else None
+        ),
+        "queued_at": (
+            run.queued_at.isoformat() if run.queued_at is not None else None
+        ),
+        "processing_at": (
+            run.processing_at.isoformat() if run.processing_at is not None else None
+        ),
+        "completed_at": (
+            run.completed_at.isoformat() if run.completed_at is not None else None
+        ),
+        "duration_seconds": _calculate_duration_seconds(
+            run.created_at if isinstance(run.created_at, datetime) else None,
+            run.completed_at if isinstance(run.completed_at, datetime) else None,
+        ),
+    }
 
 
 def _get_org_workspace_for_processed(
@@ -285,7 +336,8 @@ def get_active_adk_run_by_raw_id(
     db: Session = SessionLocal()
     try:
         query = db.query(ADKRun).filter(
-            ADKRun.raw_id == raw_id, ADKRun.status == "started"
+            ADKRun.raw_id == raw_id,
+            ADKRun.status.in_(("queued", "processing", "started")),
         )
         query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
         run = query.first()
@@ -313,25 +365,7 @@ def get_latest_failed_adk_run_by_raw_id(
         if run is None:
             return {"error": "not_found"}
 
-        return {
-            "id": run.id,
-            "raw_id": run.raw_id,
-            "processed_id": run.processed_id,
-            "report_id": run.report_id,
-            "error": run.error,
-            "error_code": run.error_code,
-            "created_at": run.created_at.isoformat(),
-            "updated_at": (
-                run.updated_at.isoformat() if run.updated_at is not None else None
-            ),
-            "completed_at": (
-                run.completed_at.isoformat() if run.completed_at is not None else None
-            ),
-            "duration_seconds": _calculate_duration_seconds(
-                run.created_at if isinstance(run.created_at, datetime) else None,
-                run.completed_at if isinstance(run.completed_at, datetime) else None,
-            ),
-        }
+        return _serialize_run(run)
     finally:
         db.close()
 
@@ -386,26 +420,16 @@ def get_adk_run_by_id(
         if run is None:
             return {"error": "not_found"}
 
-        return {
-            "id": run.id,
-            "raw_id": run.raw_id,
-            "processed_id": run.processed_id,
-            "report_id": run.report_id,
-            "status": run.status,
-            "error": run.error,
-            "error_code": run.error_code,
-            "created_at": run.created_at.isoformat(),
-            "updated_at": (
-                run.updated_at.isoformat() if run.updated_at is not None else None
-            ),
-            "completed_at": (
-                run.completed_at.isoformat() if run.completed_at is not None else None
-            ),
-            "duration_seconds": _calculate_duration_seconds(
-                run.created_at if isinstance(run.created_at, datetime) else None,
-                run.completed_at if isinstance(run.completed_at, datetime) else None,
-            ),
-        }
+        steps = (
+            db.query(ADKRunStep)
+            .filter(ADKRunStep.adk_run_id == run.id)
+            .order_by(ADKRunStep.id.asc())
+            .all()
+        )
+
+        payload = _serialize_run(run)
+        payload["step_timings"] = [_serialize_run_step(step) for step in steps]
+        return payload
 
     finally:
         db.close()
@@ -421,29 +445,7 @@ def list_adk_runs(
         query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
         runs = query.order_by(ADKRun.created_at.desc()).limit(limit).all()
 
-        return [
-            {
-                "id": r.id,
-                "raw_id": r.raw_id,
-                "status": r.status,
-                "error": r.error,
-                "error_code": r.error_code,
-                "processed_id": r.processed_id,
-                "report_id": r.report_id,
-                "created_at": r.created_at.isoformat(),
-                "updated_at": (
-                    r.updated_at.isoformat() if r.updated_at is not None else None
-                ),
-                "completed_at": (
-                    r.completed_at.isoformat() if r.completed_at is not None else None
-                ),
-                "duration_seconds": _calculate_duration_seconds(
-                    r.created_at if isinstance(r.created_at, datetime) else None,
-                    r.completed_at if isinstance(r.completed_at, datetime) else None,
-                ),
-            }
-            for r in runs
-        ]
+        return [_serialize_run(r) for r in runs]
     finally:
         db.close()
 
@@ -458,26 +460,7 @@ def list_adk_runs_by_raw_id(
         query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
         runs = query.order_by(ADKRun.created_at.desc()).all()
 
-        return [
-            {
-                "id": r.id,
-                "status": r.status,
-                "processed_id": r.processed_id,
-                "report_id": r.report_id,
-                "created_at": r.created_at.isoformat(),
-                "updated_at": (
-                    r.updated_at.isoformat() if r.updated_at is not None else None
-                ),
-                "completed_at": (
-                    r.completed_at.isoformat() if r.completed_at is not None else None
-                ),
-                "duration_seconds": _calculate_duration_seconds(
-                    r.created_at if isinstance(r.created_at, datetime) else None,
-                    r.completed_at if isinstance(r.completed_at, datetime) else None,
-                ),
-            }
-            for r in runs
-        ]
+        return [_serialize_run(r) for r in runs]
 
     finally:
         db.close()
@@ -495,27 +478,7 @@ def get_adk_run_steps(
             query = _apply_org_workspace_filters(query, ADKRun, org_id, workspace_id)
         steps = query.order_by(ADKRunStep.id.asc()).all()
 
-        return [
-            {
-                "id": s.id,
-                "step": s.step,
-                "status": s.status,
-                "data": s.data,
-                "error": s.error,
-                "error_code": s.error_code,
-                "created_at": (
-                    s.created_at.isoformat() if s.created_at is not None else None
-                ),
-                "finished_at": (
-                    s.finished_at.isoformat() if s.finished_at is not None else None
-                ),
-                "duration_seconds": _calculate_duration_seconds(
-                    s.created_at if isinstance(s.created_at, datetime) else None,
-                    s.finished_at if isinstance(s.finished_at, datetime) else None,
-                ),
-            }
-            for s in steps
-        ]
+        return [_serialize_run_step(s) for s in steps]
     finally:
         db.close()
 
@@ -863,17 +826,31 @@ def create_adk_run(
                 return {"error": "raw_data not found"}
             org_id, workspace_id = org_workspace
 
+        queued_at = None
+        processing_at = None
+        now = datetime.now(timezone.utc)
+        if status == "queued":
+            queued_at = now
+        elif status == "processing":
+            processing_at = now
+
         run = ADKRun(
             raw_id=raw_id,
             status=status,
             org_id=org_id,
             workspace_id=workspace_id,
-            created_at=datetime.now(timezone.utc),
+            created_at=now,
+            queued_at=queued_at,
+            processing_at=processing_at,
         )
         db.add(run)
         db.commit()
         db.refresh(run)
 
+        run_update_manager.broadcast_sync(
+            run.id,
+            {"status": run.status, "step": None, "payload": {"run": _serialize_run(run)}},
+        )
         return {"id": run.id}
     finally:
         db.close()
@@ -895,6 +872,7 @@ def update_adk_run(
         if adk is None:
             return {"error": "not_found"}
 
+        now = datetime.now(timezone.utc)
         if processed_id is not None:
             setattr(adk, "processed_id", processed_id)
         if report_id is not None:
@@ -904,22 +882,25 @@ def update_adk_run(
         if error_code is not None:
             setattr(adk, "error_code", error_code)
         setattr(adk, "status", status)
-        setattr(adk, "updated_at", datetime.now(timezone.utc))
+        setattr(adk, "updated_at", now)
+
+        if status == "queued" and adk.queued_at is None:
+            setattr(adk, "queued_at", now)
+        if status == "processing" and adk.processing_at is None:
+            setattr(adk, "processing_at", now)
 
         if status in ("completed", "failed"):
-            setattr(adk, "completed_at", datetime.now(timezone.utc))
+            setattr(adk, "completed_at", now)
 
         db.commit()
         db.refresh(adk)
 
-        return {
-            "id": adk.id,
-            "status": adk.status,
-            "processed_id": adk.processed_id,
-            "report_id": adk.report_id,
-            "error": adk.error,
-            "error_code": adk.error_code,
-        }
+        payload = _serialize_run(adk)
+        run_update_manager.broadcast_sync(
+            adk.id,
+            {"status": adk.status, "step": None, "payload": {"run": payload}},
+        )
+        return payload
     finally:
         db.close()
 
@@ -957,6 +938,11 @@ def create_adk_run_step(
         db.commit()
         db.refresh(s)
 
+        step_payload = _serialize_run_step(s)
+        run_update_manager.broadcast_sync(
+            run_id,
+            {"status": status, "step": step, "payload": {"step": step_payload}},
+        )
         return {"id": s.id}
     finally:
         db.close()
@@ -971,6 +957,16 @@ def finish_adk_run_step(step_id: int) -> Dict:
 
         setattr(step, "finished_at", datetime.now(timezone.utc))
         db.commit()
+        db.refresh(step)
+        step_payload = _serialize_run_step(step)
+        run_update_manager.broadcast_sync(
+            step.adk_run_id,
+            {
+                "status": step.status,
+                "step": step.step,
+                "payload": {"step": step_payload},
+            },
+        )
         return {"id": step.id}
 
     finally:

@@ -25,6 +25,7 @@ def _run_manual_workflow(raw_id: int, run_id: int, is_retry: bool) -> dict:
 
 
 def run_compliance_workflow(raw_id: int, run_id: int, is_retry: bool) -> None:
+    tools["update_adk_run"](run_id=run_id, status="processing")
     started_step = tools["create_adk_run_step"](
         run_id=run_id,
         step="google_adk",

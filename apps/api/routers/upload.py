@@ -74,7 +74,7 @@ async def upload_file(
     raw_id = cast(int, record.id)
 
     # Create an ADK run for this raw record, then start the workflow in the background
-    adk_run = tools["create_adk_run"](raw_id=raw_id, status="started")
+    adk_run = tools["create_adk_run"](raw_id=raw_id, status="queued")
 
     background_tasks.add_task(
         run_compliance_workflow,

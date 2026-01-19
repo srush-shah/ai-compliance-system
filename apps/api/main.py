@@ -10,6 +10,7 @@ from routers import (
     policy_rules,
     reports,
     upload,
+    ws_runs,
 )
 from security import router as auth_router
 
@@ -37,6 +38,7 @@ app.include_router(adk_tools_test.router)
 app.include_router(policy_rules.router)
 app.include_router(reports.router)
 app.include_router(auth_router)
+app.include_router(ws_runs.router)
 
 
 @app.get("/health")

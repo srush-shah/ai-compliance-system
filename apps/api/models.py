@@ -198,7 +198,7 @@ class ADKRun(Base):
         index=True,
     )
 
-    status = Column(String, nullable=False)  # started | completed | failed
+    status = Column(String, nullable=False)  # queued | processing | completed | failed
     error = Column(String, nullable=True)
     error_code = Column(String, nullable=True)
 
@@ -206,6 +206,8 @@ class ADKRun(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     updated_at = Column(DateTime(timezone=True), nullable=True)
+    queued_at = Column(DateTime(timezone=True), nullable=True)
+    processing_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
 
 

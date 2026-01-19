@@ -26,11 +26,11 @@ def run_compliance(
     if active.get("active"):
         return {"status": "already_running", "run_id": active["run_id"]}
 
-    adk_run = tools["create_adk_run"](raw_id=raw_id, status="started")
+    adk_run = tools["create_adk_run"](raw_id=raw_id, status="queued")
 
     background_tasks.add_task(run_compliance_workflow, raw_id, adk_run["id"], False)
 
-    return {"status": "started", "run_id": adk_run["id"]}
+    return {"status": "queued", "run_id": adk_run["id"]}
 
 
 @router.post("/retry/{raw_id}")
@@ -75,11 +75,11 @@ def retry_compliance(
             "error_code": latest.get("error_code"),
         }
 
-    adk_run = tools["create_adk_run"](raw_id=raw_id, status="started")
+    adk_run = tools["create_adk_run"](raw_id=raw_id, status="queued")
 
     background_tasks.add_task(run_compliance_workflow, raw_id, adk_run["id"], True)
 
-    return {"status": "started", "run_id": adk_run["id"], "retry_of": latest["id"]}
+    return {"status": "queued", "run_id": adk_run["id"], "retry_of": latest["id"]}
 
 
 @router.get("/runs")

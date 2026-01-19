@@ -18,6 +18,9 @@ type Run = {
 
 const runStatusTone = (status: string) => {
   switch (status) {
+    case "queued":
+      return "gray";
+    case "processing":
     case "started":
       return "blue";
     case "completed":
