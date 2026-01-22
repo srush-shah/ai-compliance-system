@@ -7,6 +7,7 @@ from routers import (
     dashboard_reports,
     dashboard_runs,
     dashboard_violations,
+    demo,
     policy_rules,
     reports,
     upload,
@@ -39,6 +40,7 @@ app.include_router(policy_rules.router)
 app.include_router(reports.router)
 app.include_router(auth_router)
 app.include_router(ws_runs.router)
+app.include_router(demo.router)
 
 
 @app.get("/health")
