@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "playwright/test";
 import path from "path";
 
 const fixtureFile = path.join(process.cwd(), "tests", "fixtures", "sample.txt");
