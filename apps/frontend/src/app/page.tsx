@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getAuthToken } from "@/lib/api";
 
 export default function UploadPage() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -10,16 +11,24 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [demoError, setDemoError] = useState<string | null>(null);
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+  const [demoRunId, setDemoRunId] = useState<number | null>(null);
 
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setIsUploading(true);
+    const authToken = getAuthToken();
     const form = e.currentTarget;
     const data = new FormData(form);
 
     try {
-      const res = await fetch(`${API_BASE}/upload`, {method: 'POST', body: data});
+      const res = await fetch(`${API_BASE}/upload`, {
+        method: 'POST',
+        body: data,
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+      });
 
       if(!res.ok) {
         const errorText = await res.text();
@@ -44,6 +53,37 @@ export default function UploadPage() {
       );
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function handleLoadDemo() {
+    setDemoError(null);
+    setIsLoadingDemo(true);
+    const authToken = getAuthToken();
+
+    try {
+      const res = await fetch(`${API_BASE}/demo/load`, {
+        method: 'POST',
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        setDemoError(`Demo load failed (${res.status}). ${errorText || 'Unknown error'}`);
+        return;
+      }
+
+      const demoData = await res.json();
+      if (demoData?.run_id) {
+        setDemoRunId(demoData.run_id);
+      }
+    } catch (error) {
+      console.error('Demo load error:', error);
+      setDemoError(
+        `Failed to connect to API at ${API_BASE}. Make sure the backend server is running.`,
+      );
+    } finally {
+      setIsLoadingDemo(false);
     }
   }
 
@@ -127,6 +167,42 @@ export default function UploadPage() {
             >
               Go to Dashboard
             </Link>
+          </div>
+
+          <div className="rounded border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="font-semibold text-emerald-900">Demo dataset</div>
+                <p className="mt-1 text-emerald-800">
+                  Load a pre-seeded export that triggers PII, PCI, HIPAA, and
+                  export-control violations.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleLoadDemo}
+                className="inline-flex items-center justify-center rounded border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isLoadingDemo}
+              >
+                {isLoadingDemo ? 'Loading demo…' : 'Load demo data'}
+              </button>
+            </div>
+            {demoError && (
+              <div className="mt-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {demoError}
+              </div>
+            )}
+            {demoRunId && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-emerald-900">
+                <span className="font-medium">Demo run created:</span>
+                <Link
+                  href={`/dashboard?run=${demoRunId}`}
+                  className="font-semibold text-emerald-700 underline"
+                >
+                  View run #{demoRunId}
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="rounded border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-600">

@@ -120,6 +120,7 @@ All tables include `created_at` timestamps (UTC).
 
 ### Core Workflow
 - `POST /upload` - Upload a file (JSON or text)
+- `POST /demo/load` - Seed demo policy rules + demo data and start a run
 - `POST /ingest` - Process raw data (requires `raw_id`)
 - `POST /check_compliance` - Run compliance checks (requires `processed_id`)
 - `POST /risk_assessment` - Assess risk (requires `processed_id`)
@@ -143,6 +144,18 @@ All tables include `created_at` timestamps (UTC).
 - **`/dashboard/runs/[runId]`** - Run details with step timeline and fallback indicator
 
 Dashboard pages use server-side rendering where possible and client-side polling for live run status.
+
+## Demo walkthrough
+
+Use the built-in demo loader to create a run with seeded policy rules and data that triggers PII, PCI, HIPAA, export-control, and pricing violations.
+
+1. Start the API and frontend servers.
+2. Visit `http://localhost:3000`.
+3. Click **Load demo data** on the upload page to seed policy rules + create a demo run.
+4. Select **View run** to open the run details and watch violations populate.
+
+![Upload page with demo loader](docs/screenshots/demo-upload.svg)
+![Demo run with seeded violations](docs/screenshots/demo-run.svg)
 
 ## Setup Instructions
 
