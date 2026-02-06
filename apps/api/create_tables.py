@@ -209,12 +209,12 @@ def ensure_multi_tenant_columns():
             with engine.begin() as conn:
                 conn.execute(
                     text(
-                        f\"\"\"
+                        f"""
                     ALTER TABLE {table}
                     ADD CONSTRAINT {name}
                     FOREIGN KEY ({column})
                     REFERENCES {ref_table}({ref_col})
-                \"\"\"
+                """
                     )
                 )
 
