@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import StatusBadge from "@/components/status-badge";
-import { apiFetch, getAuthToken } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { failureReason, formatDuration, formatIsoDate } from "@/lib/formatters";
 
 type Run = {
@@ -166,20 +166,11 @@ export default function RunDetailsClient({ runId }: { runId: number }) {
       return () => undefined;
     }
 
-    const token = getAuthToken();
-    if (!token) {
-      startPolling();
-      return () => {
-        stopPolling();
-      };
-    }
-
     const apiBase =
       process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
       "http://localhost:8000";
     const wsBase = apiBase.replace(/^http/, "ws");
     const url = new URL(`${wsBase}/ws/runs/${runId}`);
-    url.searchParams.set("token", token);
 
     try {
       websocket = new WebSocket(url.toString());
