@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timezone
 
 from db import SessionLocal
 from fastapi import HTTPException, status
@@ -39,10 +40,22 @@ def _resolve_org_workspace(db: Session) -> tuple[int, int]:
 
     first_workspace = db.query(Workspace).order_by(Workspace.id.asc()).first()
     if not first_workspace:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No workspace found. Run bootstrap/seed steps first.",
+        org = Org(
+            name=os.getenv("DEFAULT_ORG_NAME", "Default Organization"),
+            created_at=datetime.now(timezone.utc),
         )
+        db.add(org)
+        db.commit()
+        db.refresh(org)
+
+        first_workspace = Workspace(
+            org_id=int(org.id),
+            name=os.getenv("DEFAULT_WORKSPACE_NAME", "Default Workspace"),
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(first_workspace)
+        db.commit()
+        db.refresh(first_workspace)
 
     org_id = int(first_workspace.org_id)
     workspace_id = int(first_workspace.id)

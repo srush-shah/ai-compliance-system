@@ -279,6 +279,8 @@ The following features are implemented with basic functionality and may be enhan
 
 5. **Authentication**: Authentication and authorization are intentionally disabled for now. Endpoints are accessible without tokens in local development.
 
+   - If no org/workspace rows exist yet, the API now auto-creates a default org + workspace on first request.
+
 6. **Error Handling**: Basic error handling is in place. Comprehensive error responses and validation are not fully implemented.
 
 7. **Vector Search**: ChromaDB is included in dependencies but not actively used in the current workflow.
