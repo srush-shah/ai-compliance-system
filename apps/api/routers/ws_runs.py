@@ -10,21 +10,7 @@ tools = get_adk_tools()
 
 @router.websocket("/{run_id}")
 async def run_updates(websocket: WebSocket, run_id: int) -> None:
-    token = websocket.query_params.get("token")
-    if not token:
-        auth_header = websocket.headers.get("authorization")
-        if auth_header and auth_header.lower().startswith("bearer "):
-            token = auth_header.split(" ", 1)[1]
-
-    if not token:
-        await websocket.close(code=1008)
-        return
-
-    try:
-        auth = get_auth_context_for_token(token)
-    except Exception:
-        await websocket.close(code=1008)
-        return
+    auth = get_auth_context_for_token()
 
     run = tools["get_adk_run_by_id"](
         run_id, org_id=auth.org_id, workspace_id=auth.workspace_id
