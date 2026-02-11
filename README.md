@@ -277,7 +277,7 @@ The following features are implemented with basic functionality and may be enhan
 
 4. **Risk Scoring**: Current algorithm is basic (10 points per violation, capped at 100). Sophisticated risk models are not yet implemented.
 
-5. **Authentication**: No authentication or authorization is implemented. All endpoints are publicly accessible.
+5. **Authentication**: Authentication and authorization are intentionally disabled for now. Endpoints are accessible without tokens in local development.
 
 6. **Error Handling**: Basic error handling is in place. Comprehensive error responses and validation are not fully implemented.
 

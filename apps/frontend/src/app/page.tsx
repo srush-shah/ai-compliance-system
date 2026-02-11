@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getAuthToken } from "@/lib/api";
 
 export default function UploadPage() {
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -19,7 +18,6 @@ export default function UploadPage() {
     e.preventDefault();
     setError(null);
     setIsUploading(true);
-    const authToken = getAuthToken();
     const form = e.currentTarget;
     const data = new FormData(form);
 
@@ -27,7 +25,6 @@ export default function UploadPage() {
       const res = await fetch(`${API_BASE}/upload`, {
         method: 'POST',
         body: data,
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
       });
 
       if(!res.ok) {
@@ -59,12 +56,10 @@ export default function UploadPage() {
   async function handleLoadDemo() {
     setDemoError(null);
     setIsLoadingDemo(true);
-    const authToken = getAuthToken();
 
     try {
       const res = await fetch(`${API_BASE}/demo/load`, {
         method: 'POST',
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
       });
 
       if (!res.ok) {
