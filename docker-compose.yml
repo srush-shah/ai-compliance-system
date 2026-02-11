@@ -2,8 +2,8 @@ services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: compliance
     ports:
       - "5432:5432"
@@ -14,7 +14,7 @@ services:
     build:
       context: ./apps/api
     environment:
-      DATABASE_URL: postgresql+psycopg://admin:admin@postgres:5432/compliance
+      DATABASE_URL: ${DATABASE_URL}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
     ports:
       - "8000:8000"
