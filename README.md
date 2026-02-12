@@ -251,11 +251,21 @@ npm run dev
 
 ### Docker Compose
 
-1. Set `GOOGLE_API_KEY` in your shell or `.env` file before starting.
-2. Start the stack:
-```bash
-docker-compose up --build
-```
+**Security Note:** Do **not** commit credentials. Put them in a project-root `.env` file (gitignored) or your shell environment. Docker Compose will substitute `${...}` values from there.
+
+1. **Create a `.env` file** in the project root (optional for local dev, required for production):
+   ```env
+   POSTGRES_USER=your_secure_username
+   POSTGRES_PASSWORD=your_secure_password
+   DATABASE_URL=postgresql+psycopg://your_secure_username:your_secure_password@postgres:5432/compliance
+   GOOGLE_API_KEY=your_google_api_key_here
+   ```
+   Note: The `.env` file is gitignored and will not be committed to version control.
+
+2. **Start the stack:**
+   ```bash
+   docker-compose up --build
+   ```
 
 Services:
 - API: http://localhost:8000

@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: compliance
+      POSTGRES_DB: ${POSTGRES_DB:-compliance}
     ports:
       - "5432:5432"
     volumes:
@@ -14,7 +14,9 @@ services:
     build:
       context: ./apps/api
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      # Build DATABASE_URL from the Postgres service credentials.
+      # Important: use `postgres` hostname inside Docker (service name), not localhost.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-compliance}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
     ports:
       - "8000:8000"
@@ -28,7 +30,10 @@ services:
     build:
       context: ./apps/frontend
     environment:
-      NEXT_PUBLIC_API_URL: http://api:8000
+      # For client-side calls (browser) - uses host's localhost
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      # For server-side calls (SSR) - uses Docker service name
+      API_URL: http://api:8000
     ports:
       - "3000:3000"
     depends_on:

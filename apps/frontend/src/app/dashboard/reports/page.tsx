@@ -14,10 +14,11 @@ const RISK_TIER_OPTIONS = ["all", "Low", "Medium", "High", "Critical"] as const;
 export default async function ReportsPage({
   searchParams,
 }: {
-  searchParams?: { risk_tier?: string; query?: string };
+  searchParams?: Promise<{ risk_tier?: string; query?: string }>;
 }) {
-  const currentRiskTier = searchParams?.risk_tier ?? "all";
-  const currentQuery = searchParams?.query ?? "";
+  const resolvedParams = await searchParams;
+  const currentRiskTier = resolvedParams?.risk_tier ?? "all";
+  const currentQuery = resolvedParams?.query ?? "";
   const params = new URLSearchParams();
   if (currentRiskTier && currentRiskTier !== "all") {
     params.set("risk_tier", currentRiskTier);

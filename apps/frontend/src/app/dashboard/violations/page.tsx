@@ -13,10 +13,11 @@ const SEVERITY_OPTIONS = ["all", "low", "medium", "high", "critical"] as const;
 export default async function ViolationsPage({
   searchParams,
 }: {
-  searchParams?: { severity?: string; query?: string };
+  searchParams?: Promise<{ severity?: string; query?: string }>;
 }) {
-  const currentSeverity = searchParams?.severity ?? "all";
-  const currentQuery = searchParams?.query ?? "";
+  const resolvedParams = await searchParams;
+  const currentSeverity = resolvedParams?.severity ?? "all";
+  const currentQuery = resolvedParams?.query ?? "";
   const params = new URLSearchParams();
   if (currentSeverity && currentSeverity !== "all") {
     params.set("severity", currentSeverity);

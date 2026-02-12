@@ -1,6 +1,11 @@
+// Use API_URL for server-side (SSR) calls, NEXT_PUBLIC_API_URL for client-side calls
+// In Docker, API_URL should be set to the service name (e.g., http://api:8000)
+// NEXT_PUBLIC_API_URL should be the public URL (e.g., http://localhost:8000)
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:8000";
+  (typeof window === "undefined"
+    ? process.env.API_URL
+    : process.env.NEXT_PUBLIC_API_URL
+  )?.replace(/\/$/, "") || "http://localhost:8000";
 
 type ApiFetchOptions = RequestInit & {
   next?: {
