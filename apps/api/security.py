@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone
+from typing import cast
 
 from db import SessionLocal
 from fastapi import HTTPException, status
@@ -49,7 +50,7 @@ def _resolve_org_workspace(db: Session) -> tuple[int, int]:
         db.refresh(org)
 
         first_workspace = Workspace(
-            org_id=int(org.id),
+            org_id=cast(int, org.id),
             name=os.getenv("DEFAULT_WORKSPACE_NAME", "Default Workspace"),
             created_at=datetime.now(timezone.utc),
         )
@@ -57,8 +58,8 @@ def _resolve_org_workspace(db: Session) -> tuple[int, int]:
         db.commit()
         db.refresh(first_workspace)
 
-    org_id = int(first_workspace.org_id)
-    workspace_id = int(first_workspace.id)
+    org_id = cast(int, first_workspace.org_id)
+    workspace_id = cast(int, first_workspace.id)
     _validate_org_workspace(db, org_id, workspace_id)
     return org_id, workspace_id
 

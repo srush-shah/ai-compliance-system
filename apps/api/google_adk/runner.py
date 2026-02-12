@@ -48,10 +48,10 @@ async def run_google_adk_compliance(
     # Run the workflow and collect events using async iteration
     try:
         async for event in _runner.run_async(
-            user_id=user_id,
-            session_id=session_id,
-            new_message=Content(parts=[Part(text=prompt)]),
-        ):
+        user_id=user_id,
+        session_id=session_id,
+        new_message=Content(parts=[Part(text=prompt)]),
+    ):
             text_candidates: list[str] = []
 
             # Check if this is a final response event
@@ -74,43 +74,43 @@ async def run_google_adk_compliance(
                     pass
 
             # event.content.parts (for all events, including incremental)
-            event_content = getattr(event, "content", None)
-            if event_content:
+        event_content = getattr(event, "content", None)
+        if event_content:
+            try:
+                parts = getattr(event_content, "parts", []) or []
+                for p in parts:
+                    t = getattr(p, "text", None)
+                    if t:
+                        text_candidates.append(t)
+            except Exception:
+                pass
+
+        # other possible attrs
+        for attr_name in ["message", "text", "response"]:
+            attr_value = getattr(event, attr_name, None)
+            if attr_value:
                 try:
-                    parts = getattr(event_content, "parts", []) or []
-                    for p in parts:
-                        t = getattr(p, "text", None)
+                    if isinstance(attr_value, str):
+                        text_candidates.append(attr_value)
+                    elif hasattr(attr_value, "text"):
+                        t = getattr(attr_value, "text", None)
                         if t:
                             text_candidates.append(t)
+                    elif hasattr(attr_value, "content"):
+                        content = getattr(attr_value, "content", None)
+                        if content:
+                            parts = getattr(content, "parts", []) or []
+                            for p in parts:
+                                t = getattr(p, "text", None)
+                                if t:
+                                    text_candidates.append(t)
                 except Exception:
                     pass
 
-            # other possible attrs
-            for attr_name in ["message", "text", "response"]:
-                attr_value = getattr(event, attr_name, None)
-                if attr_value:
-                    try:
-                        if isinstance(attr_value, str):
-                            text_candidates.append(attr_value)
-                        elif hasattr(attr_value, "text"):
-                            t = getattr(attr_value, "text", None)
-                            if t:
-                                text_candidates.append(t)
-                        elif hasattr(attr_value, "content"):
-                            content = getattr(attr_value, "content", None)
-                            if content:
-                                parts = getattr(content, "parts", []) or []
-                                for p in parts:
-                                    t = getattr(p, "text", None)
-                                    if t:
-                                        text_candidates.append(t)
-                    except Exception:
-                        pass
-
-            for text in text_candidates:
-                if text:
-                    final_text = text
-                    all_texts.append(text)
+        for text in text_candidates:
+            if text:
+                final_text = text
+                all_texts.append(text)
     except Exception:
         # Re-raise exceptions (including rate limit errors) to be handled by caller
         raise
