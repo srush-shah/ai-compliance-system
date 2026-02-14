@@ -11,8 +11,25 @@ from models import Base
 from sqlalchemy import inspect, text
 
 
+def table_exists(table_name: str) -> bool:
+    """Return True if the table exists in the current database/schema."""
+    inspector = inspect(engine)
+    try:
+        return inspector.has_table(table_name)
+    except Exception:
+        # Some DB backends can raise on has_table; fall back to trying get_columns
+        try:
+            inspector.get_columns(table_name)
+            return True
+        except Exception:
+            return False
+
+
 def ensure_reports_updated_at_column():
     """Ensure the reports table has the updated_at column."""
+    if not table_exists("reports"):
+        return
+
     inspector = inspect(engine)
     columns = [col["name"] for col in inspector.get_columns("reports")]
 
@@ -32,6 +49,9 @@ def ensure_reports_updated_at_column():
 
 def ensure_raw_data_columns():
     """Ensure raw_data table has metadata columns."""
+    if not table_exists("raw_data"):
+        return
+
     inspector = inspect(engine)
     columns = [col["name"] for col in inspector.get_columns("raw_data")]
     alterations = []
@@ -52,6 +72,9 @@ def ensure_raw_data_columns():
 
 def ensure_policy_rule_columns():
     """Ensure policy_rules table has pattern column."""
+    if not table_exists("policy_rules"):
+        return
+
     inspector = inspect(engine)
     columns = [col["name"] for col in inspector.get_columns("policy_rules")]
     if "pattern" not in columns:
@@ -101,21 +124,24 @@ def ensure_org_workspace_tables():
 
 def ensure_dashboard_indexes():
     with engine.begin() as conn:
-        conn.execute(
-            text(
-                "CREATE INDEX IF NOT EXISTS ix_violations_severity ON violations (severity)"
+        if table_exists("violations"):
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_violations_severity ON violations (severity)"
+                )
             )
-        )
-        conn.execute(
-            text(
-                "CREATE INDEX IF NOT EXISTS ix_violations_created_at ON violations (created_at)"
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_violations_created_at ON violations (created_at)"
+                )
             )
-        )
-        conn.execute(
-            text(
-                "CREATE INDEX IF NOT EXISTS ix_reports_created_at ON reports (created_at)"
+
+        if table_exists("reports"):
+            conn.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS ix_reports_created_at ON reports (created_at)"
+                )
             )
-        )
 
 
 def ensure_multi_tenant_columns():
@@ -131,6 +157,9 @@ def ensure_multi_tenant_columns():
     ]
 
     for table in tables:
+        if not table_exists(table):
+            continue
+
         columns = [col["name"] for col in inspector.get_columns(table)]
         alterations = []
         if "org_id" not in columns:
@@ -202,6 +231,8 @@ def ensure_multi_tenant_columns():
     }
 
     for table, constraints in foreign_keys.items():
+        if not table_exists(table):
+            continue
         existing = {fk["name"] for fk in inspector.get_foreign_keys(table)}
         for name, column, ref_table, ref_col in constraints:
             if name in existing:
@@ -234,7 +265,8 @@ if __name__ == "__main__":
         ensure_multi_tenant_columns()
     except Exception as e:
         # If table doesn't exist yet, that's fine - create_all will create it with the column
-        if "doesn't exist" not in str(e).lower():
-            print(f"Note: Could not check/update reports table: {e}")
+        msg = str(e).lower()
+        if ("doesn't exist" not in msg) and ("does not exist" not in msg) and ("undefinedtable" not in msg):
+            print(f"Note: Could not check/update schema: {e}")
 
     print("Database setup complete.")
