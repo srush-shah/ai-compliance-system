@@ -9,7 +9,7 @@ PyJWT>=2.8.0
 sqlalchemy>=2.0.30  # Python 3.13 compatible
 psycopg[binary]>=3.1.0  # Modern replacement for psycopg2, fully supports Python 3.13
 # Note: psycopg2-binary may work on Python 3.13 but psycopg is recommended
-alembic>=1.13.0  # Python 3.13 compatible
+# alembic>=1.13.0  # Python 3.13 compatible
 
 # Google ADK / Multi-Agent
 # google-ads>=28.0.0  # Updated version (23.0.0 doesn't exist, latest is 28.x)
@@ -18,13 +18,20 @@ alembic>=1.13.0  # Python 3.13 compatible
 # For now, you can pip install 'google-ads' to mock the SDK
 
 # Vector embeddings / optional
-chromadb>=0.5.0  # Python 3.13 compatible
-# Note: ChromaDB 1.0.x may require fastapi==0.115.9 exactly, but newer versions are more flexible
-pgvector>=0.3.0  # optional Postgres vector extension (Python 3.13 compatible)
+# NOTE: ChromaDB pulls in a very large dependency graph (opentelemetry, k8s, etc.) and can cause
+# pip to fail on Render with `resolution-too-deep`. Prefer Postgres + pgvector for production.
+# If you truly need Chroma, add it back later with pinned versions via a lockfile.
+# chromadb==1.5.0
+pgvector>=0.3.0
 
 # Utilities
-requests>=2.32.2  # Updated from yanked 2.32.1 (CVE-2024-35195), Python 3.13 compatible
-python-multipart>=0.0.9  # Python 3.13 compatible
+requests>=2.32.2
+python-multipart>=0.0.9
 
-google-adk
-google-generativeai
+# LLM (Gemini)
+# NOTE: `google-adk` is the main cause of the `resolution-too-deep` error. Keep it out of your
+# web runtime unless you absolutely need it.
+google-generativeai==0.8.6
+
+# Optional: if you later need the ADK, add it in a separate worker/service or pin via a lockfile.
+google-adk==1.25.0
